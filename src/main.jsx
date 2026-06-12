@@ -24,10 +24,34 @@ function loadDS() {
   });
 }
 
-loadDS()
+/* Live data: replace window.CM_DATA with the Supabase-backed object
+   before the app modules evaluate. On any failure (env missing, network
+   down, timeout) the bundled public/scripts/data.js data stays in place —
+   the site never renders empty. */
+async function loadLiveData() {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Supabase request timed out')), 4000)
+  );
+  const { loadAll } = await import('./lib/data.js');
+  window.CM_DATA = await Promise.race([loadAll(), timeout]);
+}
+
+const root = document.getElementById('root');
+root.innerHTML =
+  '<div class="pt-boot" role="status" aria-label="Loading">' +
+  '<span class="pt-boot__dot"></span><span class="pt-boot__dot"></span><span class="pt-boot__dot"></span>' +
+  '</div>';
+
+Promise.all([
+  loadDS(),
+  loadLiveData().catch((e) =>
+    console.warn('[data] Supabase unreachable — falling back to bundled seed data.', e)
+  ),
+])
   .then(() => import('./App.jsx'))
   .then(({ default: App }) => {
     const errors = window.CheatMealsDesignSystem_e4e564.__errors;
     if (errors && errors.length) console.error('Design-system bundle errors:', errors);
-    createRoot(document.getElementById('root')).render(<App />);
+    root.innerHTML = '';
+    createRoot(root).render(<App />);
   });

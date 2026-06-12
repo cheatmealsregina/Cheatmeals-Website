@@ -5,7 +5,9 @@ import { Nav } from '../shared/Nav.jsx';
 const DS = window.CheatMealsDesignSystem_e4e564;
 const data = window.CM_DATA;
 
-/* flatten every populated menu into [{...item, category}] for search */
+/* flatten every populated menu into [{...item, category}] for search;
+   the live menus already include Extra Fries (Add-Ons & Dips), the
+   bundled fallback ships it separately — add it only if absent */
 function allItems() {
   const out = [];
   Object.entries(data.menus).forEach(([category, menu]) => {
@@ -13,7 +15,9 @@ function allItems() {
       s.items.forEach((it) => out.push({ ...it, category, section: s.title }));
     });
   });
-  out.push({ ...data.extraFries, category: 'Add-Ons & Dips' });
+  if (!out.some((it) => it.name === data.extraFries.name)) {
+    out.push({ ...data.extraFries, category: 'Add-Ons & Dips' });
+  }
   return out;
 }
 
