@@ -6,17 +6,93 @@ import { ThemeToggle } from '../shared/ThemeToggle.jsx';
 const DS = window.CheatMealsDesignSystem_e4e564;
 const data = window.CM_DATA;
 
+/* Auth plumbing — supabase is imported lazily so a missing env config
+   can only ever affect the admin screens, never the public site. */
+function getSupabase() {
+  return import('../../lib/supabase.js').then((m) => m.supabase);
+}
+
+/* Session state for the /admin route guard: resolves the persisted
+   session on mount, then tracks sign-in/sign-out events. */
+export function useAdminSession() {
+  const [state, setState] = React.useState({ loading: true, session: null });
+  React.useEffect(() => {
+    let mounted = true;
+    let sub = null;
+    getSupabase()
+      .then((sb) => {
+        if (!mounted) return;
+        sb.auth.getSession().then(({ data: d }) => {
+          if (mounted) setState({ loading: false, session: d.session });
+        });
+        sub = sb.auth.onAuthStateChange((_evt, session) => {
+          if (mounted) setState({ loading: false, session });
+        }).data.subscription;
+      })
+      .catch(() => {
+        if (mounted) setState({ loading: false, session: null });
+      });
+    return () => {
+      mounted = false;
+      if (sub) sub.unsubscribe();
+    };
+  }, []);
+  return state;
+}
+
 export function AdminLogin({ mobile = true }) {
   const { Input, Button } = DS;
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [error, setError] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+
+  const signIn = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const sb = await getSupabase();
+      const { error: err } = await sb.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (err) setError('Not the secret recipe. Try again.');
+      /* success: onAuthStateChange flips the route guard to the editor */
+    } catch (e) {
+      setError("Kitchen's offline — try again in a minute.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const onEnter = (e) => {
+    if (e.key === 'Enter') signIn();
+  };
+
   return (
     <Screen mobile={mobile} label="Admin — login">
       <div className="pt-login">
         <Logo variant="icon" height={88} counter="var(--color-bg)" label="CheatMeals" />
         <h1 className="cm-display" style={{ margin: 0, fontSize: 'var(--text-3xl)' }}>ADMIN</h1>
         <div className="pt-login__card">
-          <Input label="Phone or email" placeholder="(306) 541-9198" defaultValue="306-541-9198" />
-          <Input label="Password" type="password" defaultValue="••••••" error="Incorrect password." />
-          <Button variant="primary" size="lg">Sign In</Button>
+          <Input
+            label="Phone or email"
+            placeholder="(306) 541-9198"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={onEnter}
+            autoComplete="username"
+          />
+          <Input
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={onEnter}
+            error={error || undefined}
+            autoComplete="current-password"
+          />
+          <Button variant="primary" size="lg" onClick={signIn} disabled={busy}>Sign In</Button>
         </div>
         <span className="cm-label" style={{ color: 'var(--color-text-muted)' }}>Staff only · cheatmeals.ca/admin</span>
       </div>
@@ -95,8 +171,16 @@ function EditorGroups({ editingName = 'Aloo Anarkali' }) {
 }
 
 export function AdminEditor({ mobile = true }) {
-  const { Tabs, Toast, Icon } = DS;
+  const { Tabs, Toast, Icon, Button } = DS;
   const [tab, setTab] = React.useState(0);
+  const signOut = async () => {
+    try {
+      const sb = await getSupabase();
+      await sb.auth.signOut();
+    } catch (e) {
+      console.warn('[admin] sign-out failed:', e);
+    }
+  };
   const crumbs = (
     <div className="pt-crumbs cm-label">
       <span>Menu</span>
@@ -111,6 +195,7 @@ export function AdminEditor({ mobile = true }) {
       <Logo variant="icon" height={34} counter="var(--color-surface)" label="CheatMeals admin" />
       <h1 className="cm-display">MENU EDITOR</h1>
       <ThemeToggle />
+      <Button variant="ghost" size="sm" onClick={signOut}>Sign Out</Button>
     </header>
   );
 

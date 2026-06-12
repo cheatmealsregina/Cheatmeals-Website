@@ -5,7 +5,7 @@ import { AboutScreen } from './components/site/AboutScreen.jsx';
 import { TeamScreen } from './components/site/TeamScreen.jsx';
 import { VisitScreen } from './components/site/VisitScreen.jsx';
 import { GameScreen } from './components/game/GameScreen.jsx';
-import { AdminLogin, AdminEditor } from './components/admin/AdminScreens.jsx';
+import { AdminLogin, AdminEditor, useAdminSession } from './components/admin/AdminScreens.jsx';
 
 function useIsMobile() {
   const [mobile, setMobile] = React.useState(() => window.innerWidth < 768);
@@ -39,10 +39,20 @@ function GamePage({ mobile }) {
 }
 
 function AdminPage({ mobile }) {
+  /* route guard — no session means every /admin URL shows the login */
+  const { loading, session } = useAdminSession();
+  if (loading) {
+    return (
+      <div className="admin-page">
+        <div className="pt-boot" role="status" aria-label="Loading">
+          <span className="pt-boot__dot" /><span className="pt-boot__dot" /><span className="pt-boot__dot" />
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="admin-page">
-      <AdminLogin mobile={mobile} />
-      <AdminEditor mobile={mobile} />
+      {session ? <AdminEditor mobile={mobile} /> : <AdminLogin mobile={mobile} />}
     </div>
   );
 }
