@@ -2,3 +2,8 @@ node_modules/
 dist/
 .DS_Store
 _reference/shots/
+
+# env files — never commit credentials
+.env
+.env.local
+.env.*.local
