@@ -41,7 +41,8 @@ function Cards({ items }) {
           price={it.price}
           description={it.description}
           badges={it.badges || []}
-          showMedia={it.name === 'The Red Hulk'}
+          image={it.image}
+          showMedia={it.name === 'The Red Hulk' || !!it.image}
         />
       ))}
     </div>

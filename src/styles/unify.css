@@ -377,6 +377,28 @@
   gap: var(--space-4);
 }
 .pt-editcard__actions { display: flex; justify-content: end; gap: var(--space-3); }
+.pt-editcard__photo {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+}
+
+/* reorder: rows move via pointer drag on the handle */
+.pt-rowwrap { touch-action: pan-y; }
+.pt-rowwrap .cm-editor-row__drag { touch-action: none; cursor: grab; }
+.pt-rowwrap .cm-editor-row__drag:active { cursor: grabbing; }
+
+/* category note + site-content field stacks */
+.pt-notefield,
+.pt-sitefields {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+.pt-notefield .cm-field,
+.pt-sitefields .cm-field { width: 100%; }
 .pt-badgepick { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .pt-badgepick button {
   border: 1.5px solid transparent;

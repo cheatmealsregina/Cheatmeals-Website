@@ -20,6 +20,7 @@ function mapItem(row) {
     /* numeric comes back as a string from PostgREST; null price renders "N/A" */
     price: row.price === null ? 'N/A' : Number(row.price),
     badges: row.badges || [],
+    image: row.photo_url || undefined,
   };
 }
 
@@ -82,7 +83,7 @@ export function loadMenu() {
         .order('sort_order'),
       supabase
         .from('items')
-        .select('category_id,section,name,description,price,badges')
+        .select('category_id,section,name,description,price,badges,photo_url')
         .eq('is_available', true)
         .order('sort_order'),
     ]);
