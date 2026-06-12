@@ -18,6 +18,42 @@ function stkSaveBoard(b) {
 }
 function stkPieceAt(i) { return i % 7 === 6 ? 'bun' : STK_SEQ[i % STK_SEQ.length]; }
 
+/* Submit a saved score to the shared leaderboard and return the fresh
+   top-5. Production goes through /api/leaderboard (validation + rate
+   limiting server-side); local vite dev has no /api, so it falls back
+   to a direct Supabase insert. Errors resolve to null — the board then
+   simply keeps showing the localStorage list. */
+async function stkSubmitScore(ini, score) {
+  try {
+    if (import.meta.env.DEV) {
+      const { supabase } = await import('../../lib/supabase.js');
+      const { error } = await supabase
+        .from('leaderboard')
+        .insert({ initials: ini.padEnd(3, ' '), score });
+      if (error) throw error;
+      const { data, error: selErr } = await supabase
+        .from('leaderboard')
+        .select('initials,score')
+        .order('score', { ascending: false })
+        .order('created_at')
+        .limit(5);
+      if (selErr) throw selErr;
+      return data.map((r) => ({ ini: r.initials.trim(), score: r.score }));
+    }
+    const r = await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ initials: ini, score }),
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const { top5 } = await r.json();
+    return top5 || null;
+  } catch (e) {
+    console.warn('[leaderboard] score submit failed:', e);
+    return null;
+  }
+}
+
 function GameOverCard({ score, entry = false, saved = false, onAgain, onSave, initialInitials = '' }) {
   const { Button } = DS;
   const [ini, setIni] = React.useState(initialInitials);
@@ -182,14 +218,19 @@ function PattyStacker({ W = 360, H = 560 }) {
   };
 
   const saveScore = (ini) => {
+    const initials = (ini || 'CM').slice(0, 3);
     const next = board
-      .concat({ ini: (ini || 'CM').slice(0, 3), score })
+      .concat({ ini: initials, score })
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
     setBoard(next);
     stkSaveBoard(next);
     setSaved(true);
     setMode('over');
+    /* shared leaderboard — refresh the displayed top-5 when it answers */
+    stkSubmitScore(initials, score).then((top5) => {
+      if (top5 && top5.length) setBoard(top5);
+    });
   };
 
   const off = Math.max(0, STK.baseB + stack.length * STK.layerH - (H - 230));
