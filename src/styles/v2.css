@@ -1,0 +1,320 @@
+/* ============================================================
+   Hero 2.0 — the exploded burger (.pt-xb)
+   The badge logo split into anatomy layers. Hover/focus explodes
+   the stack (each layer drifts by --xb-d), click smashes it back,
+   five clicks in 3s earns the easter-egg spin.
+   ============================================================ */
+.pt-xb {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--color-text);
+  animation: pt-xb-hop 7s var(--ease-out) infinite;
+}
+.pt-xb:hover, .pt-xb:focus-visible { animation-play-state: paused; }
+
+.pt-xb__layer,
+.pt-xb__seed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform 420ms cubic-bezier(0.2, 0.9, 0.3, 1.18);
+  will-change: transform;
+  pointer-events: none;
+}
+.pt-xb__seed { transition-delay: calc(var(--xb-i, 0) * 28ms); }
+
+.pt-xb:hover .pt-xb__layer,
+.pt-xb:focus-visible .pt-xb__layer,
+.pt-xb:hover .pt-xb__seed,
+.pt-xb:focus-visible .pt-xb__seed {
+  transform: translateY(var(--xb-d, 0));
+}
+
+/* smash — quick squash back together */
+.pt-xb--smash .pt-xb__layer,
+.pt-xb--smash .pt-xb__seed {
+  transform: translateY(calc(var(--xb-d, 0px) * -0.06)) scaleY(0.9) !important;
+  transition-duration: 120ms;
+}
+
+/* layer captions — hand notes that fade in on explode (desktop only) */
+.pt-xb__caption {
+  position: absolute;
+  left: calc(100% + var(--space-3));
+  white-space: nowrap;
+  font-family: var(--font-script);
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out) 120ms, transform 420ms cubic-bezier(0.2, 0.9, 0.3, 1.18);
+  pointer-events: none;
+}
+.pt-xb:hover .pt-xb__caption,
+.pt-xb:focus-visible .pt-xb__caption {
+  opacity: 1;
+  transform: translateY(var(--xb-d, 0));
+}
+.pt-xb__caption--bunTop { top: 16%; }
+.pt-xb__caption--zigzagTop { top: 34%; }
+.pt-xb__caption--patty { top: 46%; }
+.pt-xb__caption--zigzagBottom { top: 60%; }
+.pt-xb__caption--bunBottom { top: 70%; }
+.pt-mobile .pt-xb__caption { display: none; }
+
+/* easter egg — full spin + pennant */
+.pt-xb--egg { animation: pt-xb-spin 700ms var(--ease-out); }
+.pt-xb__egg {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  animation: pt-xb-eggin 240ms var(--ease-out);
+}
+
+@keyframes pt-xb-hop {
+  0%, 91%, 100% { transform: translateY(0); }
+  94% { transform: translateY(-12px); }
+  97% { transform: translateY(2px); }
+}
+@keyframes pt-xb-spin { to { transform: rotate(360deg); } }
+@keyframes pt-xb-eggin { from { opacity: 0; transform: translateX(-50%) translateY(8px); } }
+
+/* ============================================================
+   /game — the Patty Stacker (.stk-*)
+   ============================================================ */
+.stk-page {
+  display: grid;
+  gap: var(--space-6);
+  justify-items: center;
+  padding: var(--space-8) var(--space-4) var(--space-12);
+}
+.stk-head { display: grid; gap: var(--space-2); text-align: center; justify-items: center; }
+.stk-title { margin: 0; font-size: clamp(40px, 7vw, 64px); }
+.stk-title__script { font-size: 0.55em; color: var(--color-text-muted); }
+.stk-sub { margin: 0; color: var(--color-text-muted); }
+
+.stk-col { display: grid; gap: var(--space-5); justify-items: center; }
+
+.stk-stage {
+  position: relative;
+  overflow: hidden;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  touch-action: manipulation;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  max-width: 100%;
+}
+
+/* HUD */
+.stk-hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--space-4);
+  z-index: 4;
+  pointer-events: none;
+}
+.stk-hud__lab { display: block; color: var(--color-text-muted); }
+.stk-score { font-size: 40px; line-height: 1; }
+.stk-hud__right { display: flex; align-items: center; gap: var(--space-2); }
+.stk-chilis { display: inline-flex; gap: 2px; color: var(--cm-red); }
+.stk-sound {
+  pointer-events: auto;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.stk-sound[aria-pressed="true"] { color: var(--cm-red); border-color: var(--cm-red); }
+
+/* world (scrolls down as the stack grows) */
+.stk-world { position: absolute; inset: 0; transition: transform 300ms var(--ease-out); z-index: 1; }
+.stk-counter {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 36px;
+  border-top: 2px solid var(--color-border);
+  background: var(--color-surface-2);
+  pointer-events: none;
+  z-index: 0;
+}
+.stk-base {
+  position: absolute;
+  bottom: 8px;
+  height: 28px;
+  border: 2px solid currentColor;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+}
+
+.stk-piece { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.stk-layer { position: absolute; z-index: 1; }
+.stk-layer--new { animation: stk-drop 140ms var(--ease-out); }
+.stk-layer--flash .stk-piece { animation: stk-flash 520ms var(--ease-out); }
+
+.stk-slice {
+  position: absolute;
+  z-index: 2;
+  animation: stk-tumble 880ms ease-in forwards;
+}
+
+.stk-starpop {
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: grid;
+  justify-items: center;
+  color: var(--cm-red);
+  font-size: 20px;
+  line-height: 1;
+  animation: stk-pop 950ms var(--ease-out) forwards;
+  pointer-events: none;
+}
+.stk-starpop b {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  white-space: nowrap;
+}
+
+/* swing arm */
+.stk-arm { position: absolute; top: 0; width: 0; z-index: 3; pointer-events: none; }
+.stk-arm__rod {
+  position: absolute;
+  top: 0; left: -1px;
+  width: 2px; height: 62px;
+  background: currentColor;
+}
+.stk-claw { position: absolute; top: 56px; left: -22px; color: var(--color-text); }
+.stk-arm__piece { position: absolute; top: 82px; left: 0; }
+
+/* streak banner */
+.stk-banner {
+  position: absolute;
+  top: 86px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  animation: stk-banner 1.6s var(--ease-out) forwards;
+  pointer-events: none;
+}
+
+/* veils (idle / how-to) */
+.stk-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-3);
+  background: color-mix(in srgb, var(--color-bg) 55%, transparent);
+}
+.stk-tap { font-size: 32px; letter-spacing: 0.06em; animation: stk-blink 1.4s infinite; }
+.stk-howto { color: var(--color-text); }
+.stk-howto .cm-aside { font-size: var(--text-xl); }
+
+/* game over */
+.stk-over {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
+}
+.stk-overcard {
+  width: min(86%, 300px);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  text-align: center;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.18);
+  animation: stk-cardin 240ms var(--ease-out);
+}
+.stk-overcard__score { margin: 0; font-size: 56px; line-height: 1; color: var(--cm-red); }
+.stk-overcard__line { margin: 0; }
+.stk-overcard__line small { color: var(--color-text-muted); }
+.stk-overcard__btns { display: grid; gap: var(--space-2); width: 100%; }
+.stk-overcard__btns .cm-btn { justify-content: center; }
+.stk-overcard__note { margin: 0; font-size: var(--text-xs); color: var(--color-text-muted); }
+
+.stk-initials {
+  width: 120px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 32px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: var(--space-2);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+.stk-initials:focus { border-color: var(--cm-red); outline: none; }
+
+/* local top-5 */
+.stk-board {
+  width: min(100%, 360px);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-3);
+}
+.stk-board__title { margin: 0; text-align: center; font-size: var(--text-lg); letter-spacing: 0.05em; }
+.stk-star { color: var(--cm-red); }
+.stk-board ol { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); }
+.stk-board li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: 4px;
+  border-bottom: 1px dotted var(--color-border);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+.stk-board__pts { color: var(--cm-red); }
+.stk-board__empty { margin: 0; text-align: center; color: var(--color-text-muted); }
+
+.stk-notes { display: grid; gap: var(--space-2); justify-items: center; }
+
+/* keyframes */
+@keyframes stk-drop { from { transform: translateY(-42px); } }
+@keyframes stk-flash { 0% { opacity: 0.35; } 100% { opacity: 1; } }
+@keyframes stk-tumble {
+  to {
+    transform: translateX(var(--dx, 60px)) translateY(150px) rotate(var(--rot, 120deg));
+    opacity: 0;
+  }
+}
+@keyframes stk-pop {
+  0% { opacity: 0; margin-bottom: -6px; }
+  20% { opacity: 1; }
+  100% { opacity: 0; margin-bottom: 22px; }
+}
+@keyframes stk-banner {
+  0% { opacity: 0; translate: 0 -8px; }
+  12%, 80% { opacity: 1; translate: 0 0; }
+  100% { opacity: 0; }
+}
+@keyframes stk-blink { 50% { opacity: 0.35; } }
+@keyframes stk-cardin { from { opacity: 0; transform: translateY(10px); } }

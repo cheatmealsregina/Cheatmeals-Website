@@ -1,0 +1,23 @@
+/* ============================================================
+   CheatMeals spacing + radius tokens — 4px base scale
+   ============================================================ */
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-10: 80px;
+  --space-12: 96px;
+
+  /* Section vertical rhythm: --space-10 mobile, --space-12 desktop */
+
+  --radius-sm: 6px;    /* chips, badges */
+  --radius-md: 12px;   /* cards, inputs */
+  --radius-lg: 20px;   /* modals, hero panels */
+  --radius-full: 999px; /* pills, avatars */
+}

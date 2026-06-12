@@ -1,0 +1,27 @@
+/* App-level layout — the DS body defaults stay inside .cm-screen */
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--color-bg, #faf6ef);
+  color: var(--color-text, #0a0a0a);
+  font-family: var(--font-body, 'Poppins', sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+#root {
+  min-height: 100dvh;
+}
+
+/* Page-level site layout */
+.site-page {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Game and admin pages fill the viewport */
+.game-page,
+.admin-page {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-text);
+}

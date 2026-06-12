@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CheatMeals — Home of Indian Burgers</title>
+  <link rel="icon" href="/assets/favicon/favicon.svg">
+
+  <!-- Design System tokens + components -->
+  <link rel="stylesheet" href="/_ds/cheatmeals-design-system-e4e5642f-825c-4537-9486-cbc4230dd10b/tokens/fonts.css">
+  <link rel="stylesheet" href="/_ds/cheatmeals-design-system-e4e5642f-825c-4537-9486-cbc4230dd10b/tokens/colors.css">
+  <link rel="stylesheet" href="/_ds/cheatmeals-design-system-e4e5642f-825c-4537-9486-cbc4230dd10b/tokens/typography.css">
+  <link rel="stylesheet" href="/_ds/cheatmeals-design-system-e4e5642f-825c-4537-9486-cbc4230dd10b/tokens/spacing.css">
+  <link rel="stylesheet" href="/_ds/cheatmeals-design-system-e4e5642f-825c-4537-9486-cbc4230dd10b/tokens/effects.css">
+  <link rel="stylesheet" href="/_ds/cheatmeals-design-system-e4e5642f-825c-4537-9486-cbc4230dd10b/tokens/base.css">
+  <link rel="stylesheet" href="/_ds/cheatmeals-design-system-e4e5642f-825c-4537-9486-cbc4230dd10b/components/components.css">
+
+  <!-- FOUC prevention: apply saved theme before first paint -->
+  <script>
+    (function() {
+      var saved = localStorage.getItem('cm-theme');
+      var preferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', saved || preferred);
+    })();
+  </script>
+</head>
+<body>
+  <!-- React 18 CDN — sets window.React and window.ReactDOM synchronously
+       before the DS bundle or the app module runs. -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+
+  <!-- Logo SVGs, icon anatomy layers, seed data, image-slot web component -->
+  <script src="/scripts/logos.js"></script>
+  <script src="/scripts/icon-layers.js"></script>
+  <script src="/scripts/data.js"></script>
+  <script src="/scripts/image-slot.js"></script>
+
+  <!-- Design system React component bundle (needs window.React) -->
+  <script src="/_ds/cheatmeals-design-system-e4e5642f-825c-4537-9486-cbc4230dd10b/_ds_bundle.js"></script>
+
+  <div id="root"></div>
+
+  <!-- Vite app entry — deferred module, runs after all sync scripts above -->
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

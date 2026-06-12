@@ -1,0 +1,67 @@
+/* ============================================================
+   CheatMeals color tokens
+   Light theme is the DEFAULT (:root). Apply data-theme="dark"
+   to any subtree (or <html>) to flip the semantic aliases.
+   Brand red #FB0403 is lifted directly from the logo SVGs.
+   ============================================================ */
+
+:root {
+  /* --- Brand constants (never change between themes) --- */
+  --cm-red: #FB0403;        /* brand red: display headings' key words, prices, CTAs, badges, dotted rules */
+  --cm-red-hover: #D40310;  /* pressed/hover for red fills; red text at body size (AA) */
+  --cm-red-tint: #FCB3B3;   /* subtle tag backgrounds — light surfaces only */
+  --cm-black: #000000;      /* logo strokes (original variant) */
+  --cm-white: #FFFFFF;
+
+  /* --- Light-surface palette --- */
+  --cm-cream: #FAF6EF;      /* default page background — warm off-white */
+  --cm-cream-2: #F2ECE1;    /* alternating section bands, muted surfaces, panel hover */
+  --cm-ink: #0A0A0A;        /* primary text on light */
+  --cm-grey-dark: #525252;  /* muted text on light */
+  --cm-hairline: #E3DCCF;   /* hairline borders/dividers on cream */
+
+  /* --- Dark-surface palette (inverted blocks & dark theme) --- */
+  --cm-stage: #0A0A0A;      /* page background, dark theme */
+  --cm-panel: #141414;      /* cards/nav/feature bands on dark */
+  --cm-panel-2: #1E1E1E;    /* panel hover, secondary elevation on dark */
+  --cm-grey: #A3A3A3;       /* muted text on dark */
+  --cm-line: #2A2A2A;       /* hairline borders on dark */
+
+  /* --- Semantic aliases — LIGHT (default) --- */
+  --color-bg: var(--cm-cream);
+  --color-bg-alt: var(--cm-cream-2);
+  --color-surface: var(--cm-white);
+  --color-surface-2: var(--cm-cream-2);
+  --color-text: var(--cm-ink);
+  --color-text-muted: var(--cm-grey-dark);
+  --color-accent: var(--cm-red);
+  --color-accent-hover: var(--cm-red-hover);
+  --color-border: var(--cm-hairline);
+  --color-on-accent: var(--cm-white);
+}
+
+[data-theme="light"] {
+  --color-bg: var(--cm-cream);
+  --color-bg-alt: var(--cm-cream-2);
+  --color-surface: var(--cm-white);
+  --color-surface-2: var(--cm-cream-2);
+  --color-text: var(--cm-ink);
+  --color-text-muted: var(--cm-grey-dark);
+  --color-accent: var(--cm-red);
+  --color-accent-hover: var(--cm-red-hover);
+  --color-border: var(--cm-hairline);
+  --color-on-accent: var(--cm-white);
+}
+
+[data-theme="dark"] {
+  --color-bg: var(--cm-stage);
+  --color-bg-alt: var(--cm-panel);
+  --color-surface: var(--cm-panel);
+  --color-surface-2: var(--cm-panel-2);
+  --color-text: var(--cm-white);
+  --color-text-muted: var(--cm-grey);
+  --color-accent: var(--cm-red);
+  --color-accent-hover: var(--cm-red-hover);
+  --color-border: var(--cm-line);
+  --color-on-accent: var(--cm-white);
+}

@@ -1,0 +1,21 @@
+/* ============================================================
+   CheatMeals elevation + motion tokens
+   Light theme lifts white cards off the cream stage with soft
+   shadows + hairline borders; dark theme leans on borders +
+   surface color instead.
+   ============================================================ */
+
+:root {
+  --shadow-1: 0 1px 3px rgb(10 10 10 / 0.08);   /* cards, inputs */
+  --shadow-2: 0 8px 24px rgb(10 10 10 / 0.12);  /* modals, popovers */
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* @kind other */
+  --dur-fast: 150ms;   /* @kind other */ /* hovers, toggles */
+  --dur-base: 250ms;   /* @kind other */ /* reveals, slides */
+  --dur-slow: 600ms;   /* @kind other */ /* signature draw-in animations */
+}
+
+[data-theme="dark"] {
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 8px 24px rgb(0 0 0 / 0.5);
+}

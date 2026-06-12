@@ -1,0 +1,107 @@
+<!-- @template name="Menu Page" description="Guest-facing menu site — announcement, nav, badge hero, sticky category tabs, menu card grid, hours, dark footer, mobile call bar" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CheatMeals — Home of Indian Burgers</title>
+<link rel="icon" href="../../assets/favicon/favicon.svg">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="./ds-base.js"></script>
+<style>
+  .hero { text-align: center; padding: var(--space-8) var(--space-4) var(--space-6); display: grid; justify-items: center; gap: var(--space-4); }
+  .hero img { width: min(380px, 78vw); }
+  .hero .cta-row { display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center; }
+  .section { max-width: 1080px; margin: 0 auto; padding: var(--space-6) var(--space-4); display: grid; gap: var(--space-5); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--space-4); align-items: start; }
+  .band { background: var(--color-bg-alt); }
+  .hours-wrap { max-width: 480px; margin: 0 auto; width: 100%; display: grid; gap: var(--space-4); justify-items: center; }
+  .callbar-host { display: none; }
+  @media (max-width: 640px) {
+    .callbar-host { display: block; position: sticky; bottom: 0; z-index: 20; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+function mount() {
+  const DS = window.CheatMealsDesignSystem_e4e564;
+  if (!DS) { setTimeout(mount, 30); return; }
+  const {
+    AnnouncementBar, NavBar, Tabs, SectionHeader, MenuItemCard,
+    HoursTable, Footer, CallBar, Button,
+  } = DS;
+
+  const MENU = {
+    Burgers: [
+      { name: "Aloo Burger", price: 9.99, description: "Matches your taste better than your ex", badges: [{ kind: "pick", label: "Chef's Pick" }, { kind: "spicy", level: 1, label: "Spicy" }] },
+      { name: "Paneer Tikka Burger", price: 11.49, description: "It's not actual witchcraft, but it will possess you", badges: [{ kind: "diet", label: "Eggless" }] },
+      { name: "Double Patty", price: 13.99, description: "Honest advice: one's enough for most people", badges: [{ kind: "spicy", level: 2, label: "Extra Spicy" }] },
+    ],
+    Fries: [
+      { name: "Masala Fries", price: 5.99, description: "Please don't ask, it is what the name says", badges: [{ kind: "spicy", level: 1, label: "Spicy" }] },
+      { name: "Extra Fries", price: "—", description: "Not an option — won't fit in the box", badges: [] },
+    ],
+    Wraps: [
+      { name: "Paneer Kathi Wrap", price: 10.49, description: "", badges: [{ kind: "diet", label: "Jain" }] },
+    ],
+    Drinks: [
+      { name: "Masala Chai", price: 2.99, description: "", badges: [] },
+      { name: "Mango Lassi", price: 4.49, description: "", badges: [{ kind: "diet", label: "Eggless" }] },
+    ],
+  };
+  const CATS = Object.keys(MENU);
+
+  function App() {
+    const [cat, setCat] = React.useState(0);
+    const items = MENU[CATS[cat]];
+    return (
+      <React.Fragment>
+        <AnnouncementBar>Closed July 1 for Canada Day — see you July 2</AnnouncementBar>
+        <NavBar
+          logoSrc="../../assets/logos/cheatmeals-horizontal.svg"
+          links={[{ label: "Menu", active: true }, { label: "About" }, { label: "Find Us" }]}
+          phone="(306) 555-0123"
+        />
+        <section className="hero">
+          <img src="../../assets/logos/cheatmeals-primary.svg" alt="CheatMeals — Home of Indian Burgers" />
+          <div className="cta-row">
+            <Button variant="call" size="lg" href="tel:+13065550123">Call to Order</Button>
+            <Button variant="secondary" size="lg" href="#menu">See the Menu</Button>
+          </div>
+        </section>
+        <main className="section" id="menu">
+          <SectionHeader script="the" title={CATS[cat].toUpperCase()} accent={CATS[cat].toUpperCase()} />
+          <Tabs items={CATS} active={cat} onChange={setCat} sticky />
+          <div className="cards">
+            {items.map((it) => (
+              <MenuItemCard key={it.name} {...it} />
+            ))}
+          </div>
+        </main>
+        <section className="band">
+          <div className="section">
+            <SectionHeader title="HOURS" accent="HOURS" script="find us" scriptPosition="after" />
+            <div className="hours-wrap">
+              <HoursTable today="Friday – Saturday" />
+              <span style={{ fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>123 Albert St, Regina, SK</span>
+            </div>
+          </div>
+        </section>
+        <Footer
+          logoSrc="../../assets/logos/cheatmeals-primary-inverse.svg"
+          note="Fell in love with us? Follow on Insta."
+        />
+        <div className="callbar-host"><CallBar /></div>
+      </React.Fragment>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+}
+mount();
+</script>
+</body>
+</html>

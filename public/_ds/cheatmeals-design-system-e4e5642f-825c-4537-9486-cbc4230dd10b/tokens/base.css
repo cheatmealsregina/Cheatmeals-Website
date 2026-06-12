@@ -1,0 +1,71 @@
+/* ============================================================
+   CheatMeals base element styles + brand motif utilities
+   ============================================================ */
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Motif: red dotted rule — the menu's signature separator --- */
+.cm-dotted-rule {
+  border: none;
+  border-top: 3px dotted var(--cm-red);
+  margin: 0;
+}
+
+/* --- Motif: notched-corner plaque (from the Primary badge lockup) --- */
+.cm-plaque {
+  clip-path: polygon(
+    16px 0, calc(100% - 16px) 0, 100% 8px, 100% calc(100% - 8px),
+    calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 8px), 0 8px
+  );
+}
+
+/* --- Utility: letter-spaced uppercase label --- */
+.cm-label {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+}
+
+/* --- Utility: display heading defaults --- */
+.cm-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-display);
+}
+
+/* --- Utility: script accent (max 3 words, never load-bearing) --- */
+.cm-script {
+  font-family: var(--font-script);
+  font-weight: 400;
+  text-transform: none;
+}
+
+/* --- hidden attribute always wins over component display rules --- */
+[hidden] { display: none !important; }
+
+/* --- Global focus treatment --- */
+:focus-visible {
+  outline: 2px solid var(--cm-red);
+  outline-offset: 2px;
+}
+
+/* --- Reduced motion: collapse animation globally --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

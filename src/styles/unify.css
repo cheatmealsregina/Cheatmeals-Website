@@ -1,0 +1,432 @@
+/* ============================================================
+   CheatMeals website — unification layer
+   Maps BOTH design systems onto the shared semantic aliases and
+   carries the few cross-system decisions (each one is flagged in
+   the Decisions frames — nothing here is silently invented).
+
+   Light scope  = CheatMeals light system (cream stage)  [e4e564]
+   Dark scope   = CheatMeals dark system  (black stage)  [eb010b]
+   ============================================================ */
+
+/* ---- D2 (applied): tag aliases from the dark system ----
+   The light system hard-codes --cm-red-tint on the spicy badge,
+   which is forbidden on dark surfaces. The dark system ships a
+   theme-flipping alias — adopted verbatim. */
+:root,
+[data-theme="light"] {
+  --color-tag-bg: var(--cm-red-tint);
+  --color-tag-text: var(--cm-red-hover);
+}
+[data-theme="dark"] {
+  --color-tag-bg: color-mix(in srgb, var(--cm-red) 18%, transparent);
+  --color-tag-text: var(--cm-red);
+}
+.cm-badge--spicy { background: var(--color-tag-bg); color: var(--color-tag-text); }
+
+/* ---- D3 (applied): call button = red outline (dark system) ----
+   Keeps "one red fill per view" intact when a primary CTA is present. */
+.cm-btn--call {
+  background: transparent;
+  color: var(--cm-red);
+  border-color: var(--cm-red);
+}
+.cm-btn--call:hover { background: var(--cm-red); color: var(--cm-white); }
+
+/* ---- D4 (applied): ink toast keeps a hairline on dark ---- */
+[data-theme="dark"] .cm-toast { border: 1px solid var(--cm-line); }
+
+/* ---- D6 (applied): halftone dots use a translucent red wash on dark
+        (red-tint is light-surfaces-only in both systems) ---- */
+[data-theme="dark"] .cm-halftone {
+  background-image: radial-gradient(color-mix(in srgb, var(--cm-red) 40%, transparent) 1.5px, transparent 1.5px);
+}
+
+/* ============================================================
+   Theme cross-fade (~250ms) — applied via a temporary [data-xfade]
+   attribute on <html> while data-theme flips.
+   ============================================================ */
+[data-xfade] *,
+[data-xfade] *::before,
+[data-xfade] *::after {
+  transition:
+    background-color var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    fill var(--dur-base) var(--ease-out),
+    stroke var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out) !important;
+}
+
+/* ============================================================
+   Signature draw-in motif (from the dark system's motifs.css) —
+   inline SVG strokes with pathLength="100" + [data-draw]/[data-seed]
+   ============================================================ */
+@keyframes cm-draw { to { stroke-dashoffset: 0; } }
+@keyframes cm-pop {
+  0%   { transform: scale(0); opacity: 0; }
+  70%  { transform: scale(1.25); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.cm-draw [data-draw] {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: cm-draw var(--dur-slow) var(--ease-out) forwards;
+}
+.cm-draw [data-seed] {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: cm-pop var(--dur-base) var(--ease-out) forwards;
+  animation-delay: var(--dur-slow);
+}
+
+/* ============================================================
+   Screen scaffold (artboard roots)
+   ============================================================ */
+.cm-screen {
+  position: relative;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.cm-screen *, .cm-screen *::before, .cm-screen *::after { box-sizing: border-box; }
+
+/* logo wrapper — strokes inherit color, counters via --cm-logo-counter */
+.pt-logo { display: inline-flex; color: var(--color-text); line-height: 0; }
+.pt-logo svg { height: 100%; width: auto; display: block; }
+
+/* round ghost icon button (Instagram, theme toggle) */
+.pt-iconbtn,
+.pt-toggle {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  flex: none;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.pt-iconbtn:hover, .pt-toggle:hover { border-color: var(--color-text-muted); color: var(--cm-red); }
+.pt-toggle:active { transform: scale(0.96); }
+
+/* ---------- Nav (composed from .cm-nav language) ---------- */
+.pt-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.pt-nav__home { display: inline-flex; color: var(--color-text); text-decoration: none; }
+.pt-nav__links { display: flex; align-items: center; gap: var(--space-2); }
+.pt-nav__pennant { text-decoration: none; margin-left: var(--space-2); }
+.pt-nav__actions { display: flex; align-items: center; gap: var(--space-3); }
+
+/* ---------- Hero ---------- */
+.pt-hero {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: var(--space-8);
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-8);
+}
+.pt-hero__copy { display: grid; gap: var(--space-5); justify-items: start; }
+.pt-hero__h {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  font-size: clamp(44px, 7.5vw, 88px);
+}
+.pt-hero__script { font-size: 0.42em; line-height: 1; color: var(--color-text-muted); }
+.pt-hero__star { color: var(--cm-red); font-size: 0.38em; vertical-align: 0.45em; font-family: var(--font-body); letter-spacing: 0; }
+.pt-hero__sub { margin: 0; font-size: var(--text-lg); color: var(--color-text-muted); max-width: 44ch; }
+.pt-hero__ctas { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.pt-trust { color: var(--color-text-muted); display: inline-flex; align-items: center; gap: var(--space-3); }
+.pt-trust b { color: var(--cm-red); font-weight: 400; }
+.pt-hero__art { display: grid; justify-items: center; gap: var(--space-3); }
+
+/* ---------- Section scaffolding ---------- */
+.pt-section {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: var(--space-10) var(--space-6);
+  display: grid;
+  gap: var(--space-6);
+}
+.pt-band { background: var(--color-surface-2); }
+.pt-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+.pt-catnote { margin: 0; text-align: center; font-size: var(--text-sm); color: var(--color-text-muted); }
+.pt-subhead .cm-section-header__title { font-size: var(--text-2xl); }
+.pt-toolbar { display: flex; align-items: end; gap: var(--space-5); flex-wrap: wrap; }
+.pt-toolbar .cm-field { flex: 1; min-width: 220px; max-width: 420px; }
+.pt-empty { display: grid; justify-items: center; gap: var(--space-2); padding: var(--space-8) 0; text-align: center; }
+.pt-empty .cm-aside { font-size: var(--text-xl); }
+
+/* spec annotation — marks things the prototype fakes */
+.pt-specnote {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  padding: var(--space-3) var(--space-4);
+}
+.pt-placeholder {
+  display: grid;
+  place-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  min-height: 180px;
+}
+
+/* floating theme pill (screens without a nav) */
+.pt-themebar {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 30;
+}
+
+/* mobile sticky bottom bar — call + theme toggle */
+.pt-callbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+.pt-callbar .cm-btn { flex: 1; justify-content: center; }
+
+/* poke nudge under the hero burger */
+.pt-poke {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+/* ---------- About ---------- */
+.pt-about__logo { display: grid; justify-items: center; }
+.pt-about__copy {
+  margin: 0 auto;
+  max-width: 60ch;
+  text-align: center;
+  font-size: var(--text-lg);
+}
+.pt-photos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+.pt-photos image-slot {
+  aspect-ratio: 4 / 3;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+/* ---------- Team ---------- */
+.pt-team {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-5);
+  max-width: 880px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ---------- Visit ---------- */
+.pt-visit {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: var(--space-8);
+  align-items: start;
+}
+.pt-visit__info { display: grid; gap: var(--space-4); justify-items: start; }
+.pt-visit__addr {
+  margin: 0;
+  display: inline-flex;
+  gap: var(--space-3);
+  align-items: start;
+  font-size: var(--text-lg);
+}
+.pt-visit__addr svg { color: var(--cm-red); flex: none; margin-top: 3px; }
+.pt-visit__map {
+  position: relative;
+  min-height: 340px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  display: grid;
+  place-items: center;
+}
+.pt-visit__pin {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+}
+.pt-visit__pin svg { color: var(--cm-red); }
+
+/* ============================================================
+   Admin
+   ============================================================ */
+.pt-login {
+  min-height: 100dvh;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-5);
+  padding: var(--space-8) var(--space-4);
+}
+.pt-login__card {
+  width: min(100%, 360px);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  display: grid;
+  gap: var(--space-4);
+}
+.pt-admin-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.pt-admin-head h1 { margin: 0; font-size: var(--text-xl); flex: 1; }
+.pt-crumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+}
+.pt-crumb--here { color: var(--color-text); }
+.pt-admin-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: var(--space-8);
+  align-items: start;
+}
+.pt-tree {
+  display: grid;
+  gap: 2px;
+  position: sticky;
+  top: var(--space-4);
+}
+.pt-tree a {
+  color: var(--color-text);
+  text-decoration: none;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+.pt-tree a:hover { background: var(--color-surface-2); }
+.pt-tree a[aria-current="true"] { background: var(--color-surface-2); color: var(--cm-red); font-weight: 600; }
+.pt-tree__sub { display: grid; gap: 2px; padding-left: var(--space-4); }
+.pt-rowgroup { display: grid; gap: var(--space-3); }
+.pt-rowgroup__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.pt-rows { display: grid; gap: var(--space-2); }
+.pt-editcard {
+  background: var(--color-surface);
+  border: 1.5px solid var(--cm-red);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-4);
+}
+.pt-editcard__actions { display: flex; justify-content: end; gap: var(--space-3); }
+.pt-badgepick { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.pt-badgepick button {
+  border: 1.5px solid transparent;
+  background: none;
+  padding: 2px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  opacity: 0.45;
+}
+.pt-badgepick button[aria-pressed="true"] { opacity: 1; border-color: var(--color-text); }
+.pt-toastdock {
+  position: fixed;
+  bottom: var(--space-5);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+}
+
+/* ============================================================
+   Mobile (.pt-mobile) overrides
+   ============================================================ */
+.pt-mobile .pt-nav { padding: var(--space-3) var(--space-4); }
+.pt-mobile .pt-hero {
+  grid-template-columns: 1fr;
+  padding: var(--space-8) var(--space-5) var(--space-10);
+  text-align: center;
+}
+.pt-mobile .pt-hero__copy { justify-items: center; }
+.pt-mobile .pt-hero__h { font-size: clamp(40px, 13vw, 56px); }
+.pt-mobile .pt-section { padding: var(--space-8) var(--space-4); }
+.pt-mobile .pt-photos { grid-template-columns: 1fr; }
+.pt-mobile .pt-visit { grid-template-columns: 1fr; }
+.pt-mobile .pt-admin-grid { grid-template-columns: 1fr; }
+.pt-mobile .pt-toolbar { align-items: stretch; flex-direction: column; }
+.pt-mobile .pt-toolbar .cm-field { max-width: none; }
+/* leave room for the sticky call bar */
+.pt-mobile { padding-bottom: 76px; }
+
+/* ============================================================
+   Focus + reduced motion
+   ============================================================ */
+.cm-screen :focus-visible {
+  outline: 2px solid var(--cm-red);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cm-screen *, .cm-screen *::before, .cm-screen *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

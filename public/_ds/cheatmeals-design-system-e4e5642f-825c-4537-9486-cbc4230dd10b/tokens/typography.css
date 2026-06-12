@@ -1,0 +1,31 @@
+/* ============================================================
+   CheatMeals typography tokens
+   Three roles: Display (Anton), Script accent (Yellowtail),
+   Body/utility (Poppins).
+   ============================================================ */
+
+:root {
+  /* --- Families --- */
+  --font-display: "Anton", "Archivo Black", Impact, sans-serif;
+  --font-script: "Yellowtail", "Mr Dafoe", cursive;
+  --font-body: "Poppins", system-ui, -apple-system, sans-serif;
+
+  /* --- Scale --- */
+  --text-xs: 12px;    /* body  · small labels, captions */
+  --text-sm: 14px;    /* body  · descriptions, secondary UI */
+  --text-base: 16px;  /* body  · default body copy */
+  --text-lg: 18px;    /* body  · lead paragraphs, nav */
+  --text-xl: 24px;    /* display · card prices, sub-headings */
+  --text-2xl: 32px;   /* display · section sub-titles */
+  --text-3xl: 44px;   /* display · section titles */
+  --text-display: clamp(40px, 8vw, 88px); /* display · hero headlines */
+
+  /* --- Line heights --- */
+  --leading-display: 1.0;  /* display type, 0.95–1.05 */
+  --leading-tight: 1.25;   /* card names, sub-heads */
+  --leading-body: 1.6;     /* body copy */
+
+  /* --- Letter spacing --- */
+  --tracking-display: 0.01em;  /* Anton is already condensed; keep near-zero */
+  --tracking-caps: 0.08em;     /* letter-spaced uppercase labels, 600 weight */
+}
