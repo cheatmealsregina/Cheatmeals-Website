@@ -25,19 +25,13 @@
   </script>
 </head>
 <body>
-  <!-- React 18 CDN — sets window.React and window.ReactDOM synchronously
-       before the DS bundle or the app module runs. -->
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
-
-  <!-- Logo SVGs, icon anatomy layers, seed data, image-slot web component -->
+  <!-- Logo SVGs, icon anatomy layers, seed data, image-slot web component.
+       The design-system bundle is NOT loaded here — it needs window.React,
+       so src/main.jsx injects it after exposing the npm React instance. -->
   <script src="/scripts/logos.js"></script>
   <script src="/scripts/icon-layers.js"></script>
   <script src="/scripts/data.js"></script>
   <script src="/scripts/image-slot.js"></script>
-
-  <!-- Design system React component bundle (needs window.React) -->
-  <script src="/_ds/cheatmeals-design-system-e4e5642f-825c-4537-9486-cbc4230dd10b/_ds_bundle.js"></script>
 
   <div id="root"></div>
 
