@@ -42,7 +42,7 @@ function Cards({ items }) {
           description={it.description}
           badges={it.badges || []}
           image={it.image}
-          showMedia={!!it.image}
+          showMedia
         />
       ))}
     </div>

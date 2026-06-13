@@ -2,8 +2,22 @@ import React from 'react';
 import { Screen } from '../shared/Screen.jsx';
 import { Logo } from '../shared/Logo.jsx';
 import { ThemeToggle } from '../shared/ThemeToggle.jsx';
+import { ensureIndicFonts } from '../../lib/indicFonts.js';
 
 const DS = window.CheatMealsDesignSystem_e4e564;
+
+/* Languages the owner can author jokes in — the subset that's fully wired
+   end-to-end (label + font + public-page rendering), mirroring the public
+   /jokes page's supported set. The DB check allows more codes; adding one
+   here, plus a matching entry on the public page and an @font-face in
+   tokens/fonts-indic.css, lights it up everywhere. `script` drives the
+   [data-indic] font mapping so Devanagari (and future scripts) render in
+   the row list and the entry field, not as tofu. */
+const JOKE_LANGS = [
+  { code: 'en', label: 'English' },
+  { code: 'hi', label: 'Hindi', script: 'devanagari' },
+];
+const scriptFor = (code) => (JOKE_LANGS.find((l) => l.code === code) || {}).script;
 
 /* Auth plumbing — supabase is imported lazily so a missing env config
    can only ever affect the admin screens, never the public site. */
@@ -125,6 +139,29 @@ async function dbDeleteItem(id) {
   const { data, error } = await sb.from('items').delete().eq('id', id).select();
   if (error) throw error;
   if (!data || !data.length) throw new Error('No row deleted — are you signed in?');
+}
+
+async function dbInsertJoke(values) {
+  const sb = await getSupabase();
+  const { data, error } = await sb.from('jokes').insert(values).select();
+  if (error) throw error;
+  if (!data || !data.length) throw new Error('No joke added — are you signed in?');
+  return data[0];
+}
+
+async function dbUpdateJoke(id, patch) {
+  const sb = await getSupabase();
+  const { data, error } = await sb.from('jokes').update(patch).eq('id', id).select();
+  if (error) throw error;
+  if (!data || !data.length) throw new Error('No joke saved — are you signed in?');
+  return data[0];
+}
+
+async function dbDeleteJoke(id) {
+  const sb = await getSupabase();
+  const { data, error } = await sb.from('jokes').delete().eq('id', id).select();
+  if (error) throw error;
+  if (!data || !data.length) throw new Error('No joke deleted — are you signed in?');
 }
 
 async function dbUpdateCategoryNote(id, note) {
@@ -574,6 +611,288 @@ function EditorGroups({ items, categoryId, mutate, saved, errorToast }) {
   );
 }
 
+/* ============================================================ joke edit card
+   Mirrors the menu EditCard: an inline form for add (language picker shown)
+   and edit (language fixed). The text field carries lang + data-indic so a
+   Hindi joke is typed and shown in the Devanagari face, matching the public
+   page. Writes re-select their rows (see db ops) so an RLS-blocked write
+   surfaces as a failure and the caller can revert. */
+function JokeEditCard({ joke, lang, nextSort, onDone, onDeleted, saved, errorToast }) {
+  const { Input, Textarea, Select, Button, Modal } = DS;
+  const isNew = !joke;
+  const [jlang, setJlang] = React.useState(joke ? joke.lang : (lang || JOKE_LANGS[0].code));
+  const [text, setText] = React.useState(joke ? joke.text : '');
+  const [category, setCategory] = React.useState((joke && joke.category) || '');
+  const [busy, setBusy] = React.useState(false);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
+
+  /* Same destructive-confirm keyboard/focus handling as the menu EditCard. */
+  React.useEffect(() => {
+    if (!confirmDelete) return;
+    const opener = document.activeElement;
+    const onKey = (e) => { if (e.key === 'Escape') setConfirmDelete(false); };
+    document.addEventListener('keydown', onKey);
+    const focusTimer = setTimeout(() => {
+      const btn = document.querySelector('.cm-modal button');
+      if (btn) btn.focus();
+    }, 0);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      clearTimeout(focusTimer);
+      if (opener && typeof opener.focus === 'function') opener.focus();
+    };
+  }, [confirmDelete]);
+
+  const activeLang = isNew ? jlang : joke.lang;
+  const script = scriptFor(activeLang);
+  const len = text.trim().length;
+
+  const save = async () => {
+    const t = text.trim();
+    if (!t) { errorToast('Type the joke first.'); return; }
+    if (t.length > 500) { errorToast('Keep it under 500 characters.'); return; }
+    setBusy(true);
+    const patch = { text: t, category: category.trim() || null };
+    try {
+      if (isNew) {
+        const row = await dbInsertJoke({ ...patch, lang: jlang, is_active: true, sort_order: nextSort });
+        saved();
+        onDone(true, row);
+      } else {
+        const row = await dbUpdateJoke(joke.id, patch);
+        saved();
+        onDone(true, row);
+      }
+    } catch (e) {
+      console.warn('[admin] joke save failed:', e);
+      errorToast();
+      setBusy(false);
+    }
+  };
+
+  const doDelete = async () => {
+    setBusy(true);
+    try {
+      await dbDeleteJoke(joke.id);
+      saved();
+      onDeleted();
+    } catch (e) {
+      console.warn('[admin] joke delete failed:', e);
+      errorToast("Couldn't delete — try again.");
+      setBusy(false);
+      setConfirmDelete(false);
+    }
+  };
+
+  return (
+    <div className="pt-editcard">
+      {isNew ? (
+        <Select
+          label="Language"
+          value={jlang}
+          onChange={(e) => setJlang(e.target.value)}
+          options={JOKE_LANGS.map((l) => ({ value: l.code, label: l.label }))}
+        />
+      ) : null}
+      <Textarea
+        label="Joke"
+        rows={3}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        lang={activeLang}
+        data-indic={script}
+        placeholder="One-liner while the order's on the grill"
+        hint={len + '/500'}
+        error={len > 500 ? 'Too long — trim it to 500 characters.' : undefined}
+      />
+      <Input
+        label="Category"
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        placeholder="Optional — e.g. burger, desi, dad"
+      />
+      <div className="pt-editcard__actions">
+        {!isNew ? (
+          <Button variant="ghost" onClick={() => setConfirmDelete(true)} disabled={busy}>Delete</Button>
+        ) : null}
+        <Button variant="ghost" onClick={() => onDone(false)} disabled={busy}>Cancel</Button>
+        <Button variant="primary" onClick={save} disabled={busy}>Save</Button>
+      </div>
+      <Modal
+        open={confirmDelete}
+        title="Delete this joke?"
+        onClose={() => setConfirmDelete(false)}
+        actions={
+          <React.Fragment>
+            <Button variant="ghost" onClick={() => setConfirmDelete(false)} disabled={busy}>Keep it</Button>
+            <Button variant="primary" onClick={doDelete} disabled={busy}>Delete</Button>
+          </React.Fragment>
+        }
+      >
+        <p style={{ margin: 0 }}>This joke is gone for good. No undo. (To pull it from rotation without deleting, switch it off instead.)</p>
+      </Modal>
+    </div>
+  );
+}
+
+/* ============================================================ jokes editor
+   One language at a time (chosen by the language tab in the shell), mirroring
+   how the menu shows one category per tab. Same row affordances as the menu:
+   pointer-drag reorder, an is_active toggle (red = in rotation), inline edit,
+   and add. sort_order is per-language; reorder reassigns the language's own
+   existing slots so only moved rows get written. */
+function JokesEditor({ jokes, lang, mutate, saved, errorToast }) {
+  const { EditorRow, Button } = DS;
+  const [editingId, setEditingId] = React.useState(null);
+  const [adding, setAdding] = React.useState(false);
+  const [drag, setDrag] = React.useState(null);
+  const dragRef = React.useRef(null);
+
+  const list = jokes
+    .filter((j) => j.lang === lang)
+    .sort((a, b) => a.sort_order - b.sort_order);
+  const nextSort = list.length ? Math.max(...list.map((j) => j.sort_order)) + 1 : 0;
+  const langMeta = JOKE_LANGS.find((l) => l.code === lang) || { label: lang.toUpperCase() };
+  const script = scriptFor(lang);
+
+  const toggleActive = async (j, v) => {
+    mutate((all) => all.map((x) => (x.id === j.id ? { ...x, is_active: v } : x)));
+    try {
+      await dbUpdateJoke(j.id, { is_active: v });
+      saved();
+    } catch (e) {
+      console.warn('[admin] joke toggle failed:', e);
+      mutate((all) => all.map((x) => (x.id === j.id ? { ...x, is_active: !v } : x)));
+      errorToast();
+    }
+  };
+
+  /* pointer-drag reorder within the current language (same mechanics as the
+     menu editor — the handle has touch-action:none for mobile). */
+  const startDrag = (e, item) => {
+    if (!e.target.closest('.cm-editor-row__drag')) return;
+    if (editingId || adding) return;
+    e.preventDefault();
+    const wrap = e.currentTarget;
+    const rowH = wrap.getBoundingClientRect().height + 8;
+    const state = { id: item.id, startY: e.clientY, dy: 0, rowH };
+    dragRef.current = state;
+    setDrag({ id: item.id, dy: 0 });
+
+    const move = (ev) => {
+      state.dy = ev.clientY - state.startY;
+      setDrag({ id: state.id, dy: state.dy });
+    };
+    const up = async () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      dragRef.current = null;
+      setDrag(null);
+      const from = list.findIndex((x) => x.id === state.id);
+      const to = Math.max(0, Math.min(list.length - 1, from + Math.round(state.dy / state.rowH)));
+      if (to === from) return;
+      const slots = list.map((x) => x.sort_order).sort((a, b) => a - b);
+      const reordered = [...list];
+      const [moved] = reordered.splice(from, 1);
+      reordered.splice(to, 0, moved);
+      const updates = [];
+      const next = reordered.map((x, i) => {
+        if (x.sort_order !== slots[i]) updates.push({ id: x.id, sort_order: slots[i] });
+        return { ...x, sort_order: slots[i] };
+      });
+      const prev = list;
+      mutate((all) =>
+        all
+          .map((x) => next.find((n) => n.id === x.id) || x)
+          .sort((a, b) => a.sort_order - b.sort_order)
+      );
+      try {
+        await Promise.all(updates.map((u) => dbUpdateJoke(u.id, { sort_order: u.sort_order })));
+        saved();
+      } catch (err) {
+        console.warn('[admin] joke reorder failed:', err);
+        mutate((all) =>
+          all
+            .map((x) => prev.find((p) => p.id === x.id) || x)
+            .sort((a, b) => a.sort_order - b.sort_order)
+        );
+        errorToast();
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <div className="pt-jokes-editor">
+      <div className="pt-rowgroup">
+        <div className="pt-rowgroup__head">
+          <span className="cm-label">{langMeta.label} · {list.length}</span>
+          <Button variant="ghost" size="sm" icon="plus" onClick={() => { setAdding(true); setEditingId(null); }}>
+            Add joke
+          </Button>
+        </div>
+        <div className="pt-rows">
+          {list.map((j) =>
+            editingId === j.id ? (
+              <JokeEditCard
+                key={j.id}
+                joke={j}
+                saved={saved}
+                errorToast={errorToast}
+                onDone={(didSave, row) => {
+                  setEditingId(null);
+                  if (didSave && row) mutate((all) => all.map((x) => (x.id === j.id ? { ...x, ...row } : x)));
+                }}
+                onDeleted={() => {
+                  setEditingId(null);
+                  mutate((all) => all.filter((x) => x.id !== j.id));
+                }}
+              />
+            ) : (
+              <div
+                key={j.id}
+                className="pt-rowwrap"
+                onPointerDown={(e) => startDrag(e, j)}
+                style={
+                  drag && drag.id === j.id
+                    ? { transform: `translateY(${drag.dy}px)`, position: 'relative', zIndex: 2 }
+                    : undefined
+                }
+              >
+                <EditorRow
+                  name={<span lang={j.lang} data-indic={script}>{j.text}</span>}
+                  price={null}
+                  available={j.is_active}
+                  dragging={!!drag && drag.id === j.id}
+                  onToggle={(v) => toggleActive(j, v)}
+                  onEdit={() => { setEditingId(j.id); setAdding(false); }}
+                />
+              </div>
+            )
+          )}
+          {adding ? (
+            <JokeEditCard
+              joke={null}
+              lang={lang}
+              nextSort={nextSort}
+              saved={saved}
+              errorToast={errorToast}
+              onDone={(didSave, row) => {
+                setAdding(false);
+                if (didSave && row) mutate((all) => all.concat(row));
+              }}
+            />
+          ) : null}
+          {list.length === 0 && !adding ? (
+            <p className="pt-jokes-editor__empty cm-aside">No {langMeta.label} jokes yet. Add the first one.</p>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ============================================================ category note */
 function CategoryNote({ category, onSaved, saved, errorToast }) {
   const { Textarea, Button } = DS;
@@ -702,18 +1021,23 @@ function SiteContentEditor({ site, onSaved, saved, errorToast }) {
 /* ============================================================ editor shell */
 async function fetchAdminData() {
   const sb = await getSupabase();
-  const [cats, items, site] = await Promise.all([
+  const [cats, items, site, jokes] = await Promise.all([
     sb.from('categories').select('id,name,slug,sort_order,note,is_dietary').order('sort_order'),
     sb.from('items').select('id,category_id,section,name,description,price,badges,photo_url,is_available,sort_order').order('sort_order'),
     sb.from('site_content').select('key,value'),
+    /* staff RLS lets authenticated read ALL jokes (active + retired) so the
+       owner can manage the retired ones; the public anon read is active-only. */
+    sb.from('jokes').select('id,lang,text,category,is_active,sort_order').order('lang').order('sort_order'),
   ]);
   if (cats.error) throw cats.error;
   if (items.error) throw items.error;
   if (site.error) throw site.error;
+  if (jokes.error) throw jokes.error;
   return {
     cats: cats.data,
     items: items.data.map((i) => ({ ...i, price: i.price === null ? null : Number(i.price) })),
     site: Object.fromEntries(site.data.map((r) => [r.key, r.value])),
+    jokes: jokes.data,
   };
 }
 
@@ -721,8 +1045,9 @@ export function AdminEditor({ mobile = true }) {
   const { Tabs, Toast, Icon, Button } = DS;
   const [db, setDb] = React.useState(null);
   const [loadError, setLoadError] = React.useState(false);
-  const [view, setView] = React.useState(0); // 0 = Menu, 1 = Site
+  const [view, setView] = React.useState(0); // 0 = Menu, 1 = Site, 2 = Jokes
   const [tab, setTab] = React.useState(0);
+  const [jokeLang, setJokeLang] = React.useState(0); // index into JOKE_LANGS
   const { toast, saved, errorToast } = useToast();
 
   React.useEffect(() => {
@@ -735,6 +1060,11 @@ export function AdminEditor({ mobile = true }) {
       });
     return () => { mounted = false; };
   }, []);
+
+  /* Pull the route-scoped Devanagari face only when the owner opens the Jokes
+     tab — same philosophy as the public page, so the menu/site views never
+     pay for it. Idempotent. */
+  React.useEffect(() => { if (view === 2) ensureIndicFonts(); }, [view]);
 
   const signOut = async () => {
     try {
@@ -793,12 +1123,13 @@ export function AdminEditor({ mobile = true }) {
   const activeCat = db.cats[Math.min(tab, db.cats.length - 1)];
   const catItems = db.items.filter((i) => i.category_id === activeCat.id);
   const mutateItems = (fn) => setDb((d) => ({ ...d, items: fn(d.items) }));
+  const mutateJokes = (fn) => setDb((d) => ({ ...d, jokes: fn(d.jokes) }));
 
   const crumbs = (
     <div className="pt-crumbs cm-label">
       <span>Menu</span>
       <Icon name="arrowRight" size={12} />
-      <span className="pt-crumb--here">{view === 1 ? 'Site content' : activeCat.name}</span>
+      <span className="pt-crumb--here">{view === 1 ? 'Site content' : view === 2 ? 'Jokes' : activeCat.name}</span>
     </div>
   );
 
@@ -831,11 +1162,24 @@ export function AdminEditor({ mobile = true }) {
     />
   );
 
+  const jokesBody = (
+    <React.Fragment>
+      <Tabs items={JOKE_LANGS.map((l) => l.label)} active={jokeLang} onChange={setJokeLang} />
+      <JokesEditor
+        jokes={db.jokes || []}
+        lang={JOKE_LANGS[jokeLang].code}
+        mutate={mutateJokes}
+        saved={saved}
+        errorToast={errorToast}
+      />
+    </React.Fragment>
+  );
+
   const body = (
     <React.Fragment>
       {crumbs}
-      <Tabs items={['Menu', 'Site content']} active={view} onChange={setView} />
-      {view === 0 ? menuBody : siteBody}
+      <Tabs items={['Menu', 'Site content', 'Jokes']} active={view} onChange={setView} />
+      {view === 0 ? menuBody : view === 1 ? siteBody : jokesBody}
     </React.Fragment>
   );
 
@@ -878,6 +1222,13 @@ export function AdminEditor({ mobile = true }) {
               onClick={() => setView(1)}
             >
               Site content
+            </button>
+            <button
+              type="button"
+              aria-current={view === 2 ? 'true' : undefined}
+              onClick={() => setView(2)}
+            >
+              Jokes
             </button>
           </nav>
           <div style={{ display: 'grid', gap: 'var(--space-6)' }}>

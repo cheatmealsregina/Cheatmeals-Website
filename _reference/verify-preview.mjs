@@ -20,7 +20,7 @@ const ANON_KEY = envFile.split(/\r?\n/).find((l) => l.startsWith('VITE_SUPABASE_
 const consoleProblems = [];
 const browser = await puppeteer.launch({ executablePath: EDGE, headless: 'new' });
 try {
-  for (const route of ['/', '/game', '/admin']) {
+  for (const route of ['/', '/game', '/jokes', '/admin']) {
     const p = await browser.newPage();
     p.on('console', (m) => {
       if (['error', 'warn'].includes(m.type())) consoleProblems.push(`${route} [${m.type()}] ${m.text().slice(0, 200)}`);
@@ -40,6 +40,10 @@ try {
     if (route === '/game') {
       await p.waitForSelector('.stk-stage', { timeout: 15000 });
       out.push('preview /game: stage renders');
+    }
+    if (route === '/jokes') {
+      await p.waitForSelector('.cm-joke-card__text', { timeout: 15000 });
+      out.push('preview /jokes: joke card renders');
     }
     if (route === '/admin') {
       await p.waitForSelector('.pt-login', { timeout: 15000 });

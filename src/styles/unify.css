@@ -180,12 +180,146 @@
   gap: var(--space-6);
 }
 .pt-band { background: var(--color-surface-2); }
+
+/* ============================================================
+   /jokes page — "While you wait" interactive joke card.
+   Theme-aware via --color-* aliases. .cm-joke-card__text sets NO
+   font-family on purpose: English inherits the brand body font;
+   Hindi is switched to Noto only by [data-indic="devanagari"]
+   (tokens/fonts-indic.css). All page chrome stays in the brand fonts.
+   ============================================================ */
+.pt-jokes-page { justify-items: center; text-align: center; }
+.pt-jokes-page__sub {
+  margin: calc(var(--space-3) * -1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+}
+
+/* language switcher pills */
+.pt-jokes-langs { display: flex; justify-content: center; gap: var(--space-2); }
+.pt-jokes-lang {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  line-height: 1;
+  padding: var(--space-2) var(--space-4);
+  min-height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out);
+}
+.pt-jokes-lang:hover { color: var(--color-text); border-color: var(--color-text-muted); }
+.pt-jokes-lang--on,
+.pt-jokes-lang--on:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border-color: var(--color-accent);
+}
+/* the हिंदी pill renders in its own script regardless of stylesheet order
+   (higher specificity than the base .pt-jokes-lang font-family above) */
+.pt-jokes-lang[data-indic] { font-family: var(--font-indic-devanagari, var(--font-body)); }
+
+/* the joke card */
+.cm-joke-card {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  display: grid;
+  gap: var(--space-5);
+  justify-items: center;
+  padding: var(--space-8) var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  perspective: 900px;
+}
+.cm-joke-card__rule {
+  width: 64px;
+  border: none;
+  border-top: 3px dotted var(--cm-red);
+  margin: 0;
+}
+.cm-joke-card__inner {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: center;
+  animation: cm-joke-in 320ms var(--ease-out) both;
+}
+.cm-joke-card__text {
+  margin: 0;
+  max-width: 26ch;
+  text-align: center;
+  font-size: clamp(20px, 3.2vw, 30px);
+  line-height: 1.5;
+  color: var(--color-text);
+}
+.cm-joke-card__tag {
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+}
+@keyframes cm-joke-in {
+  from { opacity: 0; transform: rotateX(90deg); }
+  to   { opacity: 1; transform: rotateX(0); }
+}
+
+.pt-jokes-actions { display: flex; justify-content: center; }
+.pt-jokes-loading { min-height: auto; background: transparent; padding: var(--space-8) 0; }
+
+/* bottom cross-links */
+.pt-jokes-cross {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+/* reduced motion: instant swap, no flip */
+@media (prefers-reduced-motion: reduce) {
+  .cm-joke-card__inner { animation: none; }
+}
 .pt-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: var(--space-4);
-  align-items: start;
+  /* stretch so every card in a row fills the same height regardless of content */
+  align-items: stretch;
 }
+
+/* ---------- Menu card: one standard size regardless of content ----------
+   Cards become flex columns that fill the stretched row height: name + price
+   pinned at the top, the media slot a consistent 3/2 box (halftone when no
+   photo — MenuScreen passes showMedia for every item), the description clamped
+   to two lines, and the badges row pinned to the bottom. Short cards leave
+   clean whitespace at the bottom rather than floating their content. Single
+   column at 375px is unaffected (the grid floor still collapses to 100%). */
+.pt-cards .cm-menu-card { display: flex; flex-direction: column; height: 100%; }
+.pt-cards .cm-menu-card__media { flex: 0 0 auto; }
+.pt-cards .cm-menu-card__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.pt-cards .cm-menu-card__row { flex: 0 0 auto; }
+.pt-cards .cm-menu-card__desc {
+  flex: 0 0 auto;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pt-cards .cm-menu-card__badges { margin-top: auto; flex: 0 0 auto; }
+
 .pt-catnote { margin: 0; text-align: center; font-size: var(--text-sm); color: var(--color-text-muted); }
 .pt-subhead .cm-section-header__title { font-size: var(--text-2xl); }
 .pt-toolbar { display: flex; align-items: end; gap: var(--space-5); flex-wrap: wrap; }
@@ -233,13 +367,15 @@
   bottom: 0;
   z-index: 30;
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4) var(--space-3);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
 }
-.pt-callbar .cm-btn { flex: 1; justify-content: center; }
+.pt-callbar .cm-btn { width: 100%; justify-content: center; }
+/* "While you wait" pennant linking to /jokes — the mobile companion entry */
+.pt-callbar__pennant { align-self: center; text-decoration: none; line-height: 0; }
 /* call CTA reads as a tidy two-line stack: the action, then the number —
    no orphan separator leading a wrapped line */
 .pt-callbar__label {
@@ -415,6 +551,22 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 .pt-rowwrap .cm-editor-row__drag { touch-action: none; cursor: grab; }
 .pt-rowwrap .cm-editor-row__drag:active { cursor: grabbing; }
 
+/* jokes editor — reuses the menu row, but jokes have no price (hide the
+   slot) and the "name" holds a full sentence, so let it wrap and ease the
+   weight back from the menu's bold labels. The text span carries data-indic
+   so Hindi rows render in the Devanagari face. */
+.pt-jokes-editor .cm-editor-row__price { display: none; }
+.pt-jokes-editor .cm-editor-row__name {
+  font-weight: 500;
+  white-space: normal;
+  line-height: var(--leading-snug, 1.35);
+}
+.pt-jokes-editor__empty {
+  margin: 0;
+  padding: var(--space-4) var(--space-2);
+  color: var(--color-text-muted);
+}
+
 /* category note + site-content field stacks */
 .pt-notefield,
 .pt-sitefields {
@@ -565,8 +717,10 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 /* Reserve call-bar space only where a fixed CallBar actually sits at the
    bottom of the scroll: the last site section (the footer) and the game page.
    Other screens no longer carry a wasted 76px gap. */
-.site-page .pt-mobile:last-child { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
-.game-page .pt-mobile { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+/* ~93px tall now (the "While you wait" pennant stacks above the call button) */
+.site-page .pt-mobile:last-child { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+.game-page .pt-mobile { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+.jokes-page .pt-mobile { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
 .pt-themebar { bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); }
 
 /* mobile section nav — a compact horizontal-scroll row under the nav */

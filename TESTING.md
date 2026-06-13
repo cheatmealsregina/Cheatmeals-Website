@@ -66,8 +66,8 @@ exists, the harness that covers it.
 ## 7. Production build + preview
 
 - [ ] `npm run build` succeeds
-- [ ] `npm run preview` serves `/`, `/game`, `/admin` with zero console
-      errors/warnings and live data renders
+- [ ] `npm run preview` serves `/`, `/game`, `/jokes`, `/admin` with zero
+      console errors/warnings and live data renders
 - Harness: `node _reference/verify-preview.mjs` (start `npm run preview`
   first)
 
@@ -80,8 +80,49 @@ exists, the harness that covers it.
 - [ ] `api/` (server code) is not part of dist
 - Harness: covered in `verify-preview.mjs` (dist scan section)
 
+## 9. Jokes — public `/jokes`
+
+- [ ] Renders from live data (Supabase `jokes`, active only) in both themes
+      and at 375px + 1280px, with zero console errors
+- [ ] "Hit me again" never repeats a joke until the active language's pool is
+      exhausted, then reshuffles (no back-to-back repeat across the reset)
+- [ ] Language switcher shows only languages with ≥1 active joke, labelled in
+      their own script; the choice persists across reload (localStorage
+      `cm-jokes-lang`) and is hidden when only one language is active
+- [ ] Hindi renders in Devanagari — correct conjuncts/matras, no tofu — and
+      the Noto face + `tokens/fonts-indic.css` load **only** on this route
+- [ ] Homepage initial load is unchanged (Lighthouse font budget): `/` makes
+      zero requests for `fonts-indic.css` or the Devanagari woff2
+- [ ] Supabase unreachable → the page still shows a joke from the bundled
+      `window.CM_JOKES` fallback, never the empty state
+- Harness: `node _reference/verify-jokes.mjs` (dev server on :5173;
+  screenshots land in `_reference/shots/jokes/`)
+
+## 10. Jokes — admin editor (375px)
+
+- [ ] A Jokes tab sits alongside Menu / Site content; language sub-tabs
+      (English / Hindi) filter the list, jokes grouped by language
+- [ ] Add an English **and** a Hindi joke (POST with lang / text / category /
+      is_active / sort_order); the Hindi entry field accepts and shows
+      Devanagari in the Noto face (same `--font-indic-devanagari` mapping as
+      the public page)
+- [ ] Edit text inline (PATCH text); category optional; 500-char guard
+- [ ] is_active toggle (red = in rotation) is optimistic with rollback +
+      error toast on failure; retiring a joke pulls it from the public page on
+      reload, and its language pill disappears if it was the last active one
+- [ ] Delete behind the confirm modal (DELETE)
+- [ ] Drag-reorder within a language writes `sort_order`
+- [ ] Each success fires the "Saved" toast; failures revert with an error toast
+- [ ] Signed-out writes fail (RLS) — anon PATCH / POST / DELETE on `jokes`
+      change nothing
+- Harness: `node _reference/verify-jokes-admin.mjs` (dev server on :5173;
+  mock-auth write assertions + real RLS anon block, mirrors
+  `verify-admin.mjs`)
+
 ## After the walk
 
 - [ ] Clear test rows from `leaderboard` (dashboard) if harnesses ran the
-      game (`CMX`/`ZZZ` low scores)
+      game (`CMX`/`ZZZ` low scores). The jokes harnesses never write to the
+      live DB (admin writes are intercepted; anon writes are RLS-blocked), so
+      no jokes cleanup is needed.
 - [ ] Update CHANGELOG.md

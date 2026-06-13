@@ -52,16 +52,16 @@ out += `
 -- site_content — editable copy (unchanged from launch)
 -- ============================================================
 insert into public.site_content (key, value) values
-  ('announcement', '"Now slinging in Regina — 87 Hanbidge Crescent"'),
+  ('announcement', '"Now slinging in Regina — 4306 Dewdney Avenue"'),
   ('phone',        '"(306) 541-9198"'),
   ('tel',          '"tel:+13065419198"'),
-  ('address',      '"87 Hanbidge Crescent"'),
+  ('address',      '"4306 Dewdney Avenue"'),
   ('city',         '"Regina, SK"'),
   ('instagram',    '{"handle": "@cheatmeals_yqr", "url": "https://instagram.com/cheatmeals_yqr"}'),
   ('whatsapp',     '{"label": "Join our WhatsApp foodie hub", "url": "https://wa.me/13065419198"}'),
   ('about', '{
     "headline": ["OUR", "STORY"],
-    "copy": "CheatMeals started with one belief: Regina deserved the burgers we grew up craving. Hand-smashed aloo tikkis, real paneer, sauces we won''t explain — now at 87 Hanbidge Crescent."
+    "copy": "CheatMeals started with one belief: Regina deserved the burgers we grew up craving. Hand-smashed aloo tikkis, real paneer, sauces we won''t explain — now at 4306 Dewdney Avenue."
   }'),
   ('hours', '[
     {"day": "Monday",    "time": "11:00 AM – 9:00 PM"},

@@ -12,6 +12,7 @@ const bundled = window.CM_DATA || {};
 let menuCache = null;
 let siteCache = null;
 let boardCache = null;
+let jokesCache = null;
 
 function mapItem(row) {
   return {
@@ -135,6 +136,28 @@ export function loadLeaderboard() {
     return data.map((r) => ({ ini: r.initials.trim(), score: r.score }));
   })().catch((e) => {
     boardCache = null;
+    throw e;
+  }));
+}
+
+/* "While you wait" jokes for the /jokes page. Page-specific on purpose:
+   NOT part of loadAll()/the boot race, so it can never gate the site shell.
+   Returns active jokes ({ lang, text, category }) in sort_order; the page
+   seeds synchronously from window.CM_JOKES and overlays this on mount, so a
+   fetch failure silently leaves the bundled jokes in place. All languages are
+   returned (the page renders en + hi); the brand fonts handle Latin and a
+   route-scoped Noto face handles Devanagari (see tokens/fonts-indic.css). */
+export function loadJokes() {
+  return (jokesCache ??= (async () => {
+    const { data, error } = await supabase
+      .from('jokes')
+      .select('lang,text,category')
+      .eq('is_active', true)
+      .order('sort_order');
+    if (error) throw error;
+    return data.map((r) => ({ lang: r.lang, text: r.text, category: r.category || undefined }));
+  })().catch((e) => {
+    jokesCache = null;
     throw e;
   }));
 }

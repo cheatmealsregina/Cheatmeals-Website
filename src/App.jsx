@@ -4,6 +4,7 @@ import { MenuScreen } from './components/site/MenuScreen.jsx';
 import { AboutScreen } from './components/site/AboutScreen.jsx';
 import { TeamScreen } from './components/site/TeamScreen.jsx';
 import { VisitScreen } from './components/site/VisitScreen.jsx';
+import { JokesScreen } from './components/site/JokesScreen.jsx';
 import { GameScreen } from './components/game/GameScreen.jsx';
 import { AdminLogin, AdminEditor, useAdminSession } from './components/admin/AdminScreens.jsx';
 
@@ -38,6 +39,14 @@ function GamePage({ mobile }) {
   );
 }
 
+function JokesPage({ mobile }) {
+  return (
+    <div className="jokes-page">
+      <JokesScreen mobile={mobile} />
+    </div>
+  );
+}
+
 function AdminPage({ mobile }) {
   /* route guard — no session means every /admin URL shows the login */
   const { loading, session } = useAdminSession();
@@ -62,6 +71,7 @@ export default function App() {
   const path = window.location.pathname;
 
   if (path.startsWith('/game')) return <GamePage mobile={mobile} />;
+  if (path.startsWith('/jokes')) return <JokesPage mobile={mobile} />;
   if (path.startsWith('/admin')) return <AdminPage mobile={mobile} />;
   return <SitePage mobile={mobile} />;
 }

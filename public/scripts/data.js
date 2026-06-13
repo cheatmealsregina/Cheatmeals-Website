@@ -9,11 +9,11 @@
   window.CM_DATA = {
     phone: "(306) 541-9198",
     tel: "tel:+13065419198",
-    address: "87 Hanbidge Crescent",
+    address: "4306 Dewdney Avenue",
     city: "Regina, SK",
     instagram: "@cheatmeals_yqr",
     instagramUrl: "https://instagram.com/cheatmeals_yqr",
-    announcement: "Now slinging in Regina — 87 Hanbidge Crescent",
+    announcement: "Now slinging in Regina — 4306 Dewdney Avenue",
 
     categories: [
       "Aloo Burgers", "Paneer Burgers", "Frankies", "Sand-Witches", "Pavs",
@@ -106,7 +106,7 @@
 
     about: {
       headline: ["OUR", "STORY"],
-      copy: "CheatMeals started with one belief: Regina deserved the burgers we grew up craving. Hand-smashed aloo tikkis, real paneer, sauces we won't explain — now at 87 Hanbidge Crescent.",
+      copy: "CheatMeals started with one belief: Regina deserved the burgers we grew up craving. Hand-smashed aloo tikkis, real paneer, sauces we won't explain — now at 4306 Dewdney Avenue.",
     },
   };
 })();

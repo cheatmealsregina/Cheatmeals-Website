@@ -1,5 +1,68 @@
 # Changelog
 
+## Jokes — "While you wait" (June 13, 2026)
+
+A companion to the game: a `/jokes` page that serves one-liners while an
+order is on the grill, plus an owner editor for them. English and Hindi,
+both themes, mobile-first.
+
+### Database
+- `20260613000000_jokes.sql` — `jokes` table (id, lang, text, category,
+  is_active, sort_order, created_at). `lang` is checked against the full
+  planned set (`en,hi,gu,pa,ml,kn,te`) though only en/hi are populated;
+  `text` is constrained non-blank and ≤500 chars; index on
+  `(lang, is_active)`. RLS mirrors the other tables: public reads active
+  jokes only, authenticated staff manage all.
+- `seed_jokes.sql` seeds the table (sort_order sequential per language),
+  generated alongside the bundled fallback from one source
+  (`_reference/jokes-source.json` → `_reference/gen-jokes.mjs`).
+
+### Public `/jokes`
+- "JOKES on the house" card with the brand treatment, category tag, and a
+  rotating "Hit me again" button. Bag-shuffle picks never repeat until the
+  active language's pool is exhausted, then reshuffle without a back-to-back
+  repeat; the seen-set persists in localStorage (hardened against corrupt
+  storage, empty pools, and a language whose jokes all go inactive).
+- Language switcher shows only languages with ≥1 active joke, labelled in
+  their own script, persists the choice, and hides itself when one language
+  is active.
+- `loadJokes()` in `data.js` reads active jokes in sort_order; the page
+  seeds synchronously from `window.CM_JOKES` (bundled fallback) and overlays
+  the live read on mount, so a Supabase blip never shows an empty card. Not
+  part of `loadAll()` / the boot race — it can't gate the site shell.
+
+### Devanagari fonts
+- Self-hosted Noto Sans Devanagari (variable woff2, weights 400–600,
+  `font-display: swap`) under the design-system assets path, exposed via a
+  `--font-indic-devanagari` token and a `[data-indic="devanagari"]`
+  mapping in `tokens/fonts-indic.css`. Adding the next script is one
+  @font-face + one token + one mapping entry (documented in that file and
+  in the lang→script tables).
+- The face is in a route-scoped stylesheet kept out of the global load and
+  injected on mount via `src/lib/indicFonts.js` (shared by the public page
+  and the admin jokes tab), so the homepage never downloads it. Only joke
+  text in an Indic language gets the face; English and all chrome stay in
+  the brand fonts.
+
+### Admin — jokes editor
+- A Jokes tab alongside Menu / Site content, mirroring the menu editor:
+  language sub-tabs, jokes grouped by language, add (language picker +
+  optional category + text), inline text edit, an is_active toggle (red =
+  in rotation, retire without deleting), delete behind a confirm modal, and
+  pointer-drag reorder writing `sort_order`.
+- The Hindi entry field and row list render Devanagari in the Noto face via
+  the same `[data-indic]` mapping. Every write re-selects its rows so
+  RLS-blocked writes surface as failures (revert + error toast); successes
+  show the "Saved" toast.
+
+### Testing
+- `TESTING.md` gains Jokes sections (public + admin) and `/jokes` is added
+  to the preview walk. New harnesses: `verify-jokes.mjs` (live render both
+  themes/viewports, bag-shuffle no-repeat, switcher persistence, Devanagari
+  + route-scoped font, homepage font budget unchanged, offline fallback)
+  and `verify-jokes-admin.mjs` (mock-auth add/edit/toggle/delete/reorder at
+  375px with write-body assertions + real RLS anon block).
+
 ## Phase 2 — backend wiring (June 12, 2026)
 
 Took the static prototype implementation and made it a real product:

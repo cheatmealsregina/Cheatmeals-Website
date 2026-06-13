@@ -7,9 +7,12 @@ const data = window.CM_DATA;
    in the nav, so it isn't duplicated here (it used to push the long label
    off-screen). */
 export function CallBar() {
-  const { Button } = DS;
+  const { Button, Pennant } = DS;
   return (
     <div className="pt-callbar">
+      <a className="pt-callbar__pennant" href="/jokes" aria-label="While you wait — jokes">
+        <Pennant>While you wait</Pennant>
+      </a>
       <Button variant="call" size="lg" href={data.tel}>
         <span className="pt-callbar__label">
           <span className="pt-callbar__action">Call to Order</span>
