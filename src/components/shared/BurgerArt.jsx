@@ -3,107 +3,114 @@ import React from 'react';
 const DS = window.CheatMealsDesignSystem_e4e564;
 const LAYERS = window.CM_ICON_LAYERS;
 
-/* Hero 2.0 — the badge logo split into burger anatomy. Hover (or focus)
-   explodes the stack apart with layer captions; click smashes it back
-   with a squash; five clicks inside 3s earns the easter egg spin. */
+/* Hero — the badge burger you SMASH to unlock spice. Each tap squashes the
+   stack and lights another chili on the meter below; reach the top and the
+   "Inferno" level unlocks (flame + heat glow). One more tap cools it back
+   down so it always replays. Pointer + keyboard, no hover dependency, so it
+   works identically on touch. The brand's chili spice system (the menu's
+   Spicy / Extra Spicy badges) is the whole concept here. */
 
-const XB_ORDER = [
-  /* key, explode drift (px, negative = up), caption */
-  { key: 'plate', d: 0, caption: null },
-  { key: 'bunBottom', d: 64, caption: 'toasted base' },
-  { key: 'zigzagBottom', d: 30, caption: 'house chutney' },
-  { key: 'patty', d: -8, caption: 'hand-smashed tikki' },
-  { key: 'zigzagTop', d: -46, caption: 'schezwan mayo' },
-  { key: 'bunTop', d: -84, caption: 'fresh bun' },
-];
+/* stack order, bottom of the page to top of the burger */
+const XB_ORDER = ['plate', 'bunBottom', 'zigzagBottom', 'patty', 'zigzagTop', 'bunTop'];
 
-/* per-seed drift — they scatter a touch farther than the dome */
-const SEED_DRIFT = [-118, -104, -126, -108, -122, -98, -112];
+const MAX_SPICE = 5;
+/* brand-voiced rungs; index 0 is the idle hint */
+const SPICE_LABELS = ['poke it to spice it up', 'Mild', 'Medium', 'Spicy', 'Extra Spicy', 'Inferno unlocked'];
 
 export function ExplodedBurger({ size = 420 }) {
-  const { Pennant } = DS;
+  const { Icon } = DS;
+  const [spice, setSpice] = React.useState(0);
   const [smash, setSmash] = React.useState(false);
-  const [egg, setEgg] = React.useState(false);
-  const clicks = React.useRef([]);
+  const [popIndex, setPopIndex] = React.useState(-1);
   const timer = React.useRef(null);
   React.useEffect(() => () => clearTimeout(timer.current), []);
 
-  const onPoke = () => {
-    const now = Date.now();
-    clicks.current = clicks.current.filter((t) => now - t < 3000).concat(now);
-    if (clicks.current.length >= 5) {
-      clicks.current = [];
-      setEgg(true);
-      clearTimeout(timer.current);
-      timer.current = setTimeout(() => setEgg(false), 2400);
-      return;
-    }
+  const onSmash = () => {
     setSmash(true);
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setSmash(false), 450);
+    timer.current = setTimeout(() => setSmash(false), 280);
+    setSpice((s) => {
+      const next = s >= MAX_SPICE ? 0 : s + 1; /* one more tap past Inferno cools it down */
+      setPopIndex(next > s ? next - 1 : -1);
+      return next;
+    });
+  };
+
+  const onKey = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSmash();
+    }
   };
 
   if (!LAYERS) return null;
 
+  const unlocked = spice >= MAX_SPICE;
+  const ariaLabel =
+    spice === 0
+      ? 'Smash the burger to crank up the spice'
+      : unlocked
+        ? 'Spice maxed out — Inferno unlocked. Smash to cool down.'
+        : `Spice level ${spice} of ${MAX_SPICE} — smash for more`;
+
   return (
-    <div
-      className={'pt-xb' + (smash ? ' pt-xb--smash' : '') + (egg ? ' pt-xb--egg' : '')}
-      style={{ width: size, height: size * (1402 / 1122) * 0.82 }}
-      onPointerDown={onPoke}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onPoke();
-        }
-      }}
-      role="button"
-      aria-label="CheatMeals burger badge — poke it"
-      tabIndex={0}
-    >
-      {XB_ORDER.map((l) => (
-        <React.Fragment key={l.key}>
+    <div className="pt-xb-wrap">
+      <div
+        className={'pt-xb' + (smash ? ' pt-xb--smash' : '') + (unlocked ? ' pt-xb--max' : '')}
+        style={{ width: size, height: size * (1402 / 1122) * 0.82 }}
+        onPointerDown={onSmash}
+        onKeyDown={onKey}
+        role="button"
+        aria-label={ariaLabel}
+        tabIndex={0}
+      >
+        {XB_ORDER.map((key) => (
           <svg
-            className={'pt-xb__layer pt-xb__layer--' + l.key}
-            style={{ '--xb-d': l.d + 'px' }}
+            key={key}
+            className={'pt-xb__layer pt-xb__layer--' + key}
             viewBox={LAYERS.viewBox}
             preserveAspectRatio="xMidYMid meet"
             aria-hidden="true"
-            dangerouslySetInnerHTML={{ __html: LAYERS[l.key] }}
+            dangerouslySetInnerHTML={{ __html: LAYERS[key] }}
           />
-          {l.caption ? (
-            <span className={'pt-xb__caption pt-xb__caption--' + l.key} style={{ '--xb-d': l.d + 'px' }}>
-              {l.caption}
-            </span>
-          ) : null}
-        </React.Fragment>
-      ))}
-      {LAYERS.seeds.map((s, i) => (
-        <svg
-          key={i}
-          className="pt-xb__seed"
-          style={{ '--xb-d': SEED_DRIFT[i] + 'px', '--xb-i': i }}
-          viewBox={LAYERS.viewBox}
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden="true"
-          dangerouslySetInnerHTML={{ __html: s }}
-        />
-      ))}
-      {egg ? (
-        <span className="pt-xb__egg"><Pennant>Okay. We might be hiring.</Pennant></span>
-      ) : null}
-    </div>
-  );
-}
+        ))}
+        {LAYERS.seeds.map((s, i) => (
+          <svg
+            key={i}
+            className="pt-xb__seed"
+            viewBox={LAYERS.viewBox}
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: s }}
+          />
+        ))}
+        {unlocked ? (
+          <span className="pt-xb__flame" aria-hidden="true">
+            <Icon name="flame" size={Math.round(size * 0.16)} />
+          </span>
+        ) : null}
+      </div>
 
-/* hand-drawn nudge under the burger */
-export function PokeArrow() {
-  return (
-    <span className="pt-poke">
-      <svg viewBox="0 0 44 40" width="34" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M6 36 C 16 30, 28 22, 34 8" />
-        <path d="M25 10 l9 -3 2 9" />
-      </svg>
-      <span className="cm-aside">poke it</span>
-    </span>
+      {/* spice meter — decorative chilis + a live label that announces the level */}
+      <div className="pt-spice">
+        <span className="pt-spice__chilis" aria-hidden="true">
+          {Array.from({ length: MAX_SPICE }).map((_, i) => (
+            <span
+              key={i}
+              className={
+                'pt-spice__chili' +
+                (i < spice ? ' is-on' : '') +
+                (smash && i === popIndex ? ' is-pop' : '')
+              }
+            >
+              <Icon name="chili" size={26} />
+            </span>
+          ))}
+        </span>
+        <span className={'pt-spice__label' + (unlocked ? ' is-max' : '')} aria-live="polite">
+          {SPICE_LABELS[spice]}
+        </span>
+      </div>
+    </div>
   );
 }

@@ -1,18 +1,30 @@
 /* ============================================================
-   Hero 2.0 — the exploded burger (.pt-xb)
-   The badge logo split into anatomy layers. Hover/focus explodes
-   the stack (each layer drifts by --xb-d), click smashes it back,
-   five clicks in 3s earns the easter-egg spin.
+   Hero — smash the burger to unlock spice (.pt-xb / .pt-spice)
+   The badge logo, stacked from anatomy layers. Each tap squashes
+   the whole stack (transform-origin bottom, like a real smash) and
+   lights another chili on the meter; the top rung unlocks "Inferno"
+   with a flame + heat glow. No hover dependency, so touch behaves
+   exactly like desktop. Calm at rest — animation only on interaction.
    ============================================================ */
+.pt-xb-wrap {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-5);
+}
 .pt-xb {
   position: relative;
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   color: var(--color-text);
-  animation: pt-xb-hop 7s var(--ease-out) infinite;
+  transform-origin: bottom center;
+  transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              filter 240ms var(--ease-out);
 }
-.pt-xb:hover, .pt-xb:focus-visible { animation-play-state: paused; }
+/* gentle lift on pointer devices — never required to understand the burger */
+@media (hover: hover) {
+  .pt-xb:hover { transform: translateY(-6px); }
+}
 
 .pt-xb__layer,
 .pt-xb__seed {
@@ -20,68 +32,73 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  transition: transform 420ms cubic-bezier(0.2, 0.9, 0.3, 1.18);
-  will-change: transform;
   pointer-events: none;
 }
-.pt-xb__seed { transition-delay: calc(var(--xb-i, 0) * 28ms); }
 
-.pt-xb:hover .pt-xb__layer,
-.pt-xb:focus-visible .pt-xb__layer,
-.pt-xb:hover .pt-xb__seed,
-.pt-xb:focus-visible .pt-xb__seed {
-  transform: translateY(var(--xb-d, 0));
+/* smash — squash down and rebound */
+.pt-xb--smash { animation: pt-xb-smash 280ms var(--ease-out); }
+@keyframes pt-xb-smash {
+  0%   { transform: translateY(0) scaleY(1) scaleX(1); }
+  35%  { transform: translateY(10px) scaleY(0.82) scaleX(1.05); }
+  70%  { transform: translateY(-3px) scaleY(1.05) scaleX(0.98); }
+  100% { transform: translateY(0) scaleY(1) scaleX(1); }
 }
 
-/* smash — quick squash back together */
-.pt-xb--smash .pt-xb__layer,
-.pt-xb--smash .pt-xb__seed {
-  transform: translateY(calc(var(--xb-d, 0px) * -0.06)) scaleY(0.9) !important;
-  transition-duration: 120ms;
+/* max — "Inferno": heat glow + a flickering flame above the dome */
+.pt-xb--max { animation: pt-xb-heat 1.6s var(--ease-out) infinite; }
+@keyframes pt-xb-heat {
+  0%, 100% { filter: none; }
+  50% { filter: drop-shadow(0 6px 16px color-mix(in srgb, var(--cm-red) 55%, transparent)); }
 }
-
-/* layer captions — hand notes that fade in on explode (desktop only) */
-.pt-xb__caption {
+.pt-xb__flame {
   position: absolute;
-  left: calc(100% + var(--space-3));
-  white-space: nowrap;
-  font-family: var(--font-script);
-  font-size: var(--text-lg);
-  color: var(--color-text-muted);
-  opacity: 0;
-  transition: opacity 300ms var(--ease-out) 120ms, transform 420ms cubic-bezier(0.2, 0.9, 0.3, 1.18);
-  pointer-events: none;
-}
-.pt-xb:hover .pt-xb__caption,
-.pt-xb:focus-visible .pt-xb__caption {
-  opacity: 1;
-  transform: translateY(var(--xb-d, 0));
-}
-.pt-xb__caption--bunTop { top: 16%; }
-.pt-xb__caption--zigzagTop { top: 34%; }
-.pt-xb__caption--patty { top: 46%; }
-.pt-xb__caption--zigzagBottom { top: 60%; }
-.pt-xb__caption--bunBottom { top: 70%; }
-.pt-mobile .pt-xb__caption { display: none; }
-
-/* easter egg — full spin + pennant */
-.pt-xb--egg { animation: pt-xb-spin 700ms var(--ease-out); }
-.pt-xb__egg {
-  position: absolute;
-  top: -14px;
+  top: -6%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
-  animation: pt-xb-eggin 240ms var(--ease-out);
+  color: var(--cm-red);
+  line-height: 0;
+  animation: pt-xb-flicker 640ms var(--ease-out) infinite alternate;
+}
+@keyframes pt-xb-flicker {
+  from { transform: translateX(-50%) scale(0.9) rotate(-3deg); opacity: 0.85; }
+  to   { transform: translateX(-50%) scale(1.1) rotate(3deg); opacity: 1; }
 }
 
-@keyframes pt-xb-hop {
-  0%, 91%, 100% { transform: translateY(0); }
-  94% { transform: translateY(-12px); }
-  97% { transform: translateY(2px); }
+/* ---- spice meter ---- */
+.pt-spice {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  min-height: 64px; /* reserve space so the burger never shifts as the label grows */
+  align-content: start;
 }
-@keyframes pt-xb-spin { to { transform: rotate(360deg); } }
-@keyframes pt-xb-eggin { from { opacity: 0; transform: translateX(-50%) translateY(8px); } }
+.pt-spice__chilis { display: inline-flex; gap: var(--space-2); }
+.pt-spice__chili {
+  color: color-mix(in srgb, var(--color-text-muted) 30%, transparent);
+  line-height: 0;
+  transition: color 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+.pt-spice__chili.is-on { color: var(--cm-red); }
+.pt-spice__chili.is-pop { animation: pt-spice-pop 380ms var(--ease-out); }
+@keyframes pt-spice-pop {
+  0% { transform: scale(0.4) rotate(-12deg); }
+  60% { transform: scale(1.35) rotate(6deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.pt-spice__label {
+  font-family: var(--font-script);
+  font-size: var(--text-xl);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+.pt-spice__label.is-max {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--cm-red-hover);
+}
 
 /* ============================================================
    /game — the Patty Stacker (.stk-*)

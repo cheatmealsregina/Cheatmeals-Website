@@ -2,7 +2,7 @@ import React from 'react';
 import { Screen } from '../shared/Screen.jsx';
 import { Nav } from '../shared/Nav.jsx';
 import { CallBar } from '../shared/CallBar.jsx';
-import { ExplodedBurger, PokeArrow } from '../shared/BurgerArt.jsx';
+import { ExplodedBurger } from '../shared/BurgerArt.jsx';
 
 const DS = window.CheatMealsDesignSystem_e4e564;
 const data = window.CM_DATA;
@@ -29,8 +29,7 @@ export function HomeScreen({ mobile }) {
           </span>
         </div>
         <div className="pt-hero__art">
-          <ExplodedBurger size={mobile ? 300 : 420} />
-          <PokeArrow />
+          <ExplodedBurger size={mobile ? 280 : 420} />
         </div>
       </main>
       {mobile ? <CallBar /> : null}

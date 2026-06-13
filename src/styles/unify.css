@@ -546,6 +546,13 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 .pt-callbar {
   padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
 }
+/* the full-width call label wraps to two lines on narrow phones instead of
+   overflowing the bar (the phone number stays intact via a nowrap span) */
+.pt-callbar .cm-btn {
+  white-space: normal;
+  line-height: 1.25;
+  text-align: center;
+}
 .pt-mobile { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 .pt-themebar { bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); }
 
