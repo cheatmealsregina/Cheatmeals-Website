@@ -103,6 +103,12 @@
 .pt-logo { display: inline-flex; color: var(--color-text); line-height: 0; }
 .pt-logo svg { height: 100%; width: auto; display: block; }
 
+/* nav brand lockup — raster light/dark pair, swapped by theme */
+.pt-logo-img { display: block; width: auto; }
+.pt-logo-img--dark { display: none; }
+[data-theme="dark"] .pt-logo-img--light { display: none; }
+[data-theme="dark"] .pt-logo-img--dark { display: block; }
+
 /* round ghost icon button (Instagram, theme toggle) */
 .pt-iconbtn,
 .pt-toggle {

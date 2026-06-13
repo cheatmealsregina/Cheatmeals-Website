@@ -1,5 +1,4 @@
 import React from 'react';
-import { Logo } from './Logo.jsx';
 import { ThemeToggle } from './ThemeToggle.jsx';
 
 const DS = window.CheatMealsDesignSystem_e4e564;
@@ -19,8 +18,22 @@ export function Nav({ mobile, active = '' }) {
   return (
     <React.Fragment>
     <header className="pt-nav">
-      <a href="/" className="pt-nav__home" aria-label="CheatMeals home">
-        <Logo variant="horizontal" height={mobile ? 34 : 44} label="CheatMeals — Home of Indian Burgers" />
+      <a href="/" className="pt-nav__home" aria-label="CheatMeals — Home of Indian Burgers, home">
+        {/* Brand lockup — light/dark raster pair, swapped by [data-theme] in CSS */}
+        <img
+          className="pt-logo-img pt-logo-img--light"
+          src="/assets/logos/cheatmeals-lockup-light.png"
+          alt=""
+          aria-hidden="true"
+          style={{ height: mobile ? 34 : 44 }}
+        />
+        <img
+          className="pt-logo-img pt-logo-img--dark"
+          src="/assets/logos/cheatmeals-lockup-dark.png"
+          alt=""
+          aria-hidden="true"
+          style={{ height: mobile ? 34 : 44 }}
+        />
       </a>
       {!mobile ? (
         <nav className="pt-nav__links" aria-label="Primary">
