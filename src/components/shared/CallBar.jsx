@@ -12,8 +12,8 @@ export function CallBar() {
     <div className="pt-callbar">
       <Button variant="call" size="lg" href={data.tel}>
         <span className="pt-callbar__label">
-          <span style={{ whiteSpace: 'nowrap' }}>Call to Order</span>{' '}
-          <span style={{ whiteSpace: 'nowrap' }}>· {data.phone}</span>
+          <span className="pt-callbar__action">Call to Order</span>
+          <span className="pt-callbar__num">{data.phone}</span>
         </span>
       </Button>
     </div>

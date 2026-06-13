@@ -71,7 +71,6 @@ export function Nav({ mobile, active = '' }) {
             {l.label}
           </a>
         ))}
-        <a className="pt-nav__pennant" href="/game"><Pennant>While you wait</Pennant></a>
       </nav>
     ) : null}
     </React.Fragment>

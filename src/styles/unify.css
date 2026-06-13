@@ -234,6 +234,15 @@
   border-top: 1px solid var(--color-border);
 }
 .pt-callbar .cm-btn { flex: 1; justify-content: center; }
+/* call CTA reads as a tidy two-line stack: the action, then the number —
+   no orphan separator leading a wrapped line */
+.pt-callbar__label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.15;
+}
+.pt-callbar__num { font-size: 0.82em; letter-spacing: 0.04em; }
 
 /* ---------- About ---------- */
 .pt-about__logo { display: grid; justify-items: center; }
@@ -558,7 +567,8 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 .pt-nav__scroll {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  justify-content: center;
+  gap: var(--space-2);
   overflow-x: auto;
   padding: 0 var(--space-4);
   background: var(--color-surface);
@@ -573,7 +583,6 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
   min-height: 44px;
   white-space: nowrap;
 }
-.pt-nav__scroll .pt-nav__pennant { margin-left: var(--space-1); flex: none; }
 
 /* compact game shortcut in the mobile nav action row */
 .pt-nav__game {
