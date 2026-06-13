@@ -42,12 +42,14 @@
   </script>
 </head>
 <body>
-  <!-- Logo SVGs, icon anatomy layers, seed data, image-slot web component.
-       The design-system bundle is NOT loaded here — it needs window.React,
-       so src/main.jsx injects it after exposing the npm React instance. -->
+  <!-- Logo SVGs, icon anatomy layers, seed data, joke fallback, image-slot
+       web component. The design-system bundle is NOT loaded here — it needs
+       window.React, so src/main.jsx injects it after exposing the npm React
+       instance. -->
   <script src="/scripts/logos.js"></script>
   <script src="/scripts/icon-layers.js"></script>
   <script src="/scripts/data.js"></script>
+  <script src="/scripts/jokes-data.js"></script>
   <script src="/scripts/image-slot.js"></script>
 
   <div id="root"></div>
