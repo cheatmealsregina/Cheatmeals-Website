@@ -96,7 +96,7 @@
       { day: "Saturday", time: "11:00 AM – 9:00 PM" },
       { day: "Sunday", time: "11:00 AM – 9:00 PM" },
     ],
-    today: "Thursday",
+    today: new Date().toLocaleDateString("en-US", { weekday: "long" }),
 
     team: [
       { name: "The Founder", bio: "Started this because Regina needed it." },

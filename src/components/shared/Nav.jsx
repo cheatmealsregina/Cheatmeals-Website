@@ -17,6 +17,7 @@ const LINKS = [
 export function Nav({ mobile, active = '' }) {
   const { Button, Icon, Pennant } = DS;
   return (
+    <React.Fragment>
     <header className="pt-nav">
       <a href="/" className="pt-nav__home" aria-label="CheatMeals home">
         <Logo variant="horizontal" height={mobile ? 34 : 44} label="CheatMeals — Home of Indian Burgers" />
@@ -58,5 +59,21 @@ export function Nav({ mobile, active = '' }) {
         {!mobile ? <Button variant="call" href={data.tel}>Call to Order</Button> : null}
       </div>
     </header>
+    {mobile ? (
+      <nav className="pt-nav__scroll" aria-label="Sections">
+        {LINKS.map((l) => (
+          <a
+            key={l.label}
+            className={'cm-nav__link' + (l.label === active ? ' cm-nav__link--active' : '')}
+            aria-current={l.label === active ? 'page' : undefined}
+            href={l.href}
+          >
+            {l.label}
+          </a>
+        ))}
+        <a className="pt-nav__pennant" href="/game"><Pennant>While you wait</Pennant></a>
+      </nav>
+    ) : null}
+    </React.Fragment>
   );
 }

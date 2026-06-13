@@ -50,8 +50,19 @@ Promise.all([
 ])
   .then(() => import('./App.jsx'))
   .then(({ default: App }) => {
-    const errors = window.CheatMealsDesignSystem_e4e564.__errors;
+    const ds = window.CheatMealsDesignSystem_e4e564;
+    const errors = ds && ds.__errors;
     if (errors && errors.length) console.error('Design-system bundle errors:', errors);
     root.innerHTML = '';
     createRoot(root).render(<App />);
+  })
+  .catch((err) => {
+    /* DS bundle 404, App import failure, etc. — never leave the user on a
+       spinner. Tokens load via <link> so this still renders without the JS. */
+    console.error('[boot] App failed to start:', err);
+    root.innerHTML =
+      '<div class="pt-boot" role="alert" style="gap:10px;padding:24px;text-align:center;">' +
+      '<p style="font-family:var(--font-body,sans-serif);color:var(--color-text,#0a0a0a);font-size:18px;font-weight:600;margin:0;">Something went wrong.</p>' +
+      '<p style="font-family:var(--font-body,sans-serif);color:var(--color-text,#0a0a0a);opacity:.7;font-size:14px;margin:0;">Please refresh the page to try again.</p>' +
+      '</div>';
   });

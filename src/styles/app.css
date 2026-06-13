@@ -1,6 +1,19 @@
 /* App-level layout — the DS body defaults stay inside .cm-screen */
 *, *::before, *::after { box-sizing: border-box; }
 
+/* visually-hidden, still announced to assistive tech */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Smooth anchor scrolling for the in-page nav/CTAs (disabled below for
    reduced-motion users alongside the boot + page-fade animations). */
 html { scroll-behavior: smooth; }

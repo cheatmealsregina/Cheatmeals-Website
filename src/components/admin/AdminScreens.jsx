@@ -777,7 +777,20 @@ export function AdminEditor({ mobile = true }) {
     );
   }
 
-  const activeCat = db.cats[tab];
+  if (!db.cats.length) {
+    return (
+      <Screen mobile={mobile} label="Admin — menu editor">
+        {head}
+        <div className="pt-empty">
+          <span className="cm-aside">No menu categories yet.</span>
+          <span className="cm-label" style={{ color: 'var(--color-text-muted)' }}>Add a category in Supabase to start editing.</span>
+        </div>
+      </Screen>
+    );
+  }
+
+  /* clamp so a stale/out-of-range tab index can never deref undefined */
+  const activeCat = db.cats[Math.min(tab, db.cats.length - 1)];
   const catItems = db.items.filter((i) => i.category_id === activeCat.id);
   const mutateItems = (fn) => setDb((d) => ({ ...d, items: fn(d.items) }));
 

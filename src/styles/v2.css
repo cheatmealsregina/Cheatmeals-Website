@@ -37,6 +37,9 @@
 
 /* smash — squash down and rebound */
 .pt-xb--smash { animation: pt-xb-smash 280ms var(--ease-out); }
+/* the inferno-unlock tap sets both classes; keep the squash from being
+   overridden by the heat-glow animation (higher specificity wins) */
+.pt-xb--max.pt-xb--smash { animation: pt-xb-smash 280ms var(--ease-out); }
 @keyframes pt-xb-smash {
   0%   { transform: translateY(0) scaleY(1) scaleX(1); }
   35%  { transform: translateY(10px) scaleY(0.82) scaleX(1.05); }
@@ -44,11 +47,33 @@
   100% { transform: translateY(0) scaleY(1) scaleX(1); }
 }
 
-/* max — "Inferno": heat glow + a flickering flame above the dome */
-.pt-xb--max { animation: pt-xb-heat 1.6s var(--ease-out) infinite; }
+/* max — "Inferno": a fiery red glow that flickers, a pulsing aura behind
+   the burger, and a flickering flame above the dome */
+.pt-xb--max { animation: pt-xb-heat 1.1s var(--ease-out) infinite; }
 @keyframes pt-xb-heat {
-  0%, 100% { filter: none; }
-  50% { filter: drop-shadow(0 6px 16px color-mix(in srgb, var(--cm-red) 55%, transparent)); }
+  0%   { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--cm-red) 45%, transparent)) drop-shadow(0 6px 18px color-mix(in srgb, #FF5A1F 40%, transparent)); }
+  30%  { filter: drop-shadow(0 0 14px color-mix(in srgb, var(--cm-red) 72%, transparent)) drop-shadow(0 10px 30px color-mix(in srgb, #FF7A2F 60%, transparent)); }
+  45%  { filter: drop-shadow(0 0 9px color-mix(in srgb, var(--cm-red) 55%, transparent)) drop-shadow(0 7px 22px color-mix(in srgb, #FF6A2A 48%, transparent)); }
+  65%  { filter: drop-shadow(0 0 20px color-mix(in srgb, var(--cm-red) 85%, transparent)) drop-shadow(0 12px 38px color-mix(in srgb, #FF8A3A 68%, transparent)); }
+  100% { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--cm-red) 45%, transparent)) drop-shadow(0 6px 18px color-mix(in srgb, #FF5A1F 40%, transparent)); }
+}
+.pt-xb--max::before {
+  content: "";
+  position: absolute;
+  inset: -16%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 58%,
+    color-mix(in srgb, var(--cm-red) 60%, transparent) 0%,
+    color-mix(in srgb, #FF6A2A 34%, transparent) 38%,
+    transparent 70%);
+  filter: blur(8px);
+  pointer-events: none;
+  animation: pt-xb-aura 0.9s var(--ease-out) infinite alternate;
+}
+@keyframes pt-xb-aura {
+  from { opacity: 0.5; transform: scale(0.94); }
+  to   { opacity: 0.95; transform: scale(1.06); }
 }
 .pt-xb__flame {
   position: absolute;
@@ -80,7 +105,7 @@
   transition: color 200ms var(--ease-out), transform 200ms var(--ease-out);
 }
 .pt-spice__chili.is-on { color: var(--cm-red); }
-.pt-spice__chili.is-pop { animation: pt-spice-pop 380ms var(--ease-out); }
+.pt-spice__chili.is-pop { animation: pt-spice-pop 260ms var(--ease-out); }
 @keyframes pt-spice-pop {
   0% { transform: scale(0.4) rotate(-12deg); }
   60% { transform: scale(1.35) rotate(6deg); }
@@ -194,7 +219,21 @@
 .stk-slice {
   position: absolute;
   z-index: 2;
-  animation: stk-tumble 900ms cubic-bezier(0.4, 0.1, 0.7, 1) forwards;
+  transform-origin: center;
+  animation: stk-tumble 820ms cubic-bezier(0.5, 0, 0.9, 0.4) forwards;
+}
+
+/* the cut — a quick red spark at the shear line as the overhang flies off */
+.stk-cutflash {
+  position: absolute;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--cm-red);
+  box-shadow: 0 0 10px var(--cm-red), 0 0 4px #fff;
+  transform-origin: center bottom;
+  z-index: 4;
+  pointer-events: none;
+  animation: stk-cut 280ms var(--ease-out) forwards;
 }
 
 .stk-starpop {
@@ -217,7 +256,7 @@
 }
 
 /* swing arm */
-.stk-arm { position: absolute; top: 0; width: 0; z-index: 3; pointer-events: none; }
+.stk-arm { position: absolute; top: 0; left: 0; width: 0; z-index: 3; pointer-events: none; will-change: transform; }
 .stk-arm__rod {
   position: absolute;
   top: 0; left: -1px;
@@ -311,17 +350,17 @@
 .stk-board ol { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); }
 .stk-board li {
   display: flex;
-  justify-content: space-between;
+  align-items: baseline;
   gap: var(--space-3);
   padding-bottom: 4px;
   border-bottom: 1px dotted var(--color-border);
   font-weight: 600;
   letter-spacing: 0.1em;
 }
-.stk-board__pts { color: var(--cm-red); }
+.stk-board__rank { color: var(--color-text-muted); min-width: 1.4em; }
+.stk-board__ini { flex: 1; }
+.stk-board__pts { color: var(--cm-red-hover); }
 .stk-board__empty { margin: 0; text-align: center; color: var(--color-text-muted); }
-
-.stk-notes { display: grid; gap: var(--space-2); justify-items: center; }
 
 /* keyframes */
 @keyframes stk-fall {
@@ -335,10 +374,17 @@
 }
 @keyframes stk-flash { 0% { opacity: 0.35; } 100% { opacity: 1; } }
 @keyframes stk-tumble {
-  to {
-    transform: translateX(var(--dx, 60px)) translateY(150px) rotate(var(--rot, 120deg));
+  0%   { transform: translate(0, 0) rotate(0); opacity: 1; }
+  12%  { opacity: 1; }
+  100% {
+    transform: translate(var(--dx, 90px), 280px) rotate(var(--rot, 220deg)) scale(0.88);
     opacity: 0;
   }
+}
+@keyframes stk-cut {
+  0%   { opacity: 0; transform: scaleY(0.3); }
+  25%  { opacity: 1; transform: scaleY(1.5); }
+  100% { opacity: 0; transform: scaleY(1); }
 }
 @keyframes stk-pop {
   0% { opacity: 0; margin-bottom: -6px; }

@@ -13,6 +13,10 @@
       this.style.position = "relative";
       this.style.overflow = "hidden";
       this.style.cursor = "pointer";
+      /* expose as a keyboard-operable button (WCAG 2.1.1 / 4.1.2) */
+      this.tabIndex = 0;
+      this.setAttribute("role", "button");
+      this.setAttribute("aria-label", label);
 
       this._img = document.createElement("img");
       Object.assign(this._img.style, {
@@ -45,6 +49,9 @@
       this.append(this._img, this._ph, this._input);
 
       this.addEventListener("click", () => this._input.click());
+      this.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this._input.click(); }
+      });
       this.addEventListener("dragover", (e) => { e.preventDefault(); this.style.outline = "2px dashed var(--cm-red)"; });
       this.addEventListener("dragleave", () => { this.style.outline = ""; });
       this.addEventListener("drop", (e) => {

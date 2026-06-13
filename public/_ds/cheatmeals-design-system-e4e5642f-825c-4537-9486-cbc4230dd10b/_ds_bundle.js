@@ -47,8 +47,9 @@ function HoursTable({
     className: ["cm-hours", className].filter(Boolean).join(" ")
   }, /*#__PURE__*/React.createElement("tbody", null, hours.map(h => /*#__PURE__*/React.createElement("tr", {
     key: h.day,
-    className: h.day === today ? "cm-hours--today" : undefined
-  }, /*#__PURE__*/React.createElement("td", null, h.day), /*#__PURE__*/React.createElement("td", null, h.time)))));
+    className: h.day === today ? "cm-hours--today" : undefined,
+    "aria-current": h.day === today ? "date" : undefined
+  }, /*#__PURE__*/React.createElement("td", null, h.day, h.day === today ? /*#__PURE__*/React.createElement("span", { className: "sr-only" }, " (today)") : null), /*#__PURE__*/React.createElement("td", null, h.time)))));
 }
 Object.assign(__ds_scope, { HoursTable });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "components/content/HoursTable.jsx", error: String((e && e.message) || e) }); }

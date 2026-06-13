@@ -2,8 +2,9 @@ import React from 'react';
 import { Screen } from '../shared/Screen.jsx';
 import { Nav } from '../shared/Nav.jsx';
 import { CallBar } from '../shared/CallBar.jsx';
-import { SpecNote } from '../shared/SpecNote.jsx';
 import { PieceSVG, ClawGlyph, SpeakerGlyph, SketchArrow } from './GamePieces.jsx';
+import { createGameSound } from './sound.js';
+import { loadLeaderboard } from '../../lib/data.js';
 
 const DS = window.CheatMealsDesignSystem_e4e564;
 
@@ -11,7 +12,12 @@ const STK_SEQ = ['aloo', 'paneer', 'cheese', 'chutney', 'jalapeno'];
 const STK = { layerH: 22, baseW: 190, perfect: 5, baseB: 36 };
 
 function stkLoadBoard() {
-  try { return JSON.parse(localStorage.getItem('cm-stacker-board') || '[]'); } catch (e) { return []; }
+  try {
+    const v = JSON.parse(localStorage.getItem('cm-stacker-board') || '[]');
+    return Array.isArray(v)
+      ? v.filter((e) => e && typeof e.score === 'number' && typeof e.ini === 'string')
+      : [];
+  } catch (e) { return []; }
 }
 function stkSaveBoard(b) {
   try { localStorage.setItem('cm-stacker-board', JSON.stringify(b)); } catch (e) {}
@@ -104,16 +110,20 @@ function StackerBoard({ board }) {
   return (
     <section className="stk-board">
       <h3 className="cm-display stk-board__title">
-        <span className="stk-star">★</span> TODAY'S TOP STACKERS <span className="stk-star">★</span>
+        <span className="stk-star">★</span> TOP STACKERS <span className="stk-star">★</span>
       </h3>
       {board.length ? (
         <ol>
           {board.map((b, i) => (
-            <li key={i}><span>{b.ini}</span><span className="stk-board__pts">{b.score}</span></li>
+            <li key={i}>
+              <span className="stk-board__rank">{i + 1}</span>
+              <span className="stk-board__ini">{b.ini}</span>
+              <span className="stk-board__pts">{b.score}</span>
+            </li>
           ))}
         </ol>
       ) : (
-        <p className="stk-board__empty">Nobody's stacked today. Be first.</p>
+        <p className="stk-board__empty">Nobody's stacked yet. Be first.</p>
       )}
     </section>
   );
@@ -132,7 +142,10 @@ function PattyStacker({ W = 360, H = 560 }) {
   const [streak, setStreak] = React.useState(0);
   const [banner, setBanner] = React.useState(false);
   const [flashId, setFlashId] = React.useState(null);
-  const [muted, setMuted] = React.useState(true);
+  const [cutFx, setCutFx] = React.useState(null);
+  const [muted, setMuted] = React.useState(() => {
+    try { return localStorage.getItem('cm-stacker-muted') === '1'; } catch (e) { return false; }
+  });
   const [board, setBoard] = React.useState(stkLoadBoard);
   const [saved, setSaved] = React.useState(false);
   const [pieceIdx, setPieceIdx] = React.useState(0);
@@ -140,23 +153,47 @@ function PattyStacker({ W = 360, H = 560 }) {
   const armX = React.useRef(W / 2);
   const phase = React.useRef(0);
   const idRef = React.useRef(1);
+  const droppingRef = React.useRef(false);
+  const savingRef = React.useRef(false);
   const timers = React.useRef([]);
   const later = (fn, ms) => { timers.current.push(setTimeout(fn, ms)); };
   React.useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
+  const sound = React.useMemo(() => createGameSound(), []);
+  React.useEffect(() => { sound.setMuted(muted); }, [muted, sound]);
+
+  /* pull the shared top-5 on mount; keep the local list as the instant
+     fallback if the network/Supabase call fails */
+  React.useEffect(() => {
+    let alive = true;
+    loadLeaderboard()
+      .then((top5) => { if (alive && top5 && top5.length) setBoard(top5); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  const setArmPos = (px) => {
+    if (armRef.current) armRef.current.style.transform = 'translateX(' + px.toFixed(1) + 'px)';
+  };
+
   const armActive = mode === 'play' || mode === 'idle' || mode === 'howto';
   React.useEffect(() => {
     if (!armActive) return;
+    /* honour reduced-motion: park the arm at centre (still fully playable —
+       a tap drops from wherever the arm rests) and skip the rAF loop */
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { armX.current = W / 2; setArmPos(W / 2); return; }
     let raf, last = performance.now();
     const amp = (W - 74) / 2;
     const spd = 0.0024 + stack.length * 0.00009;
     const tick = (t) => {
-      if (!document.hidden) {
-        phase.current += (t - last) * spd;
-        armX.current = W / 2 + Math.sin(phase.current) * amp;
-        if (armRef.current) armRef.current.style.left = armX.current.toFixed(1) + 'px';
-      }
+      const dt = Math.min(t - last, 50); /* clamp so a tab-refocus can't snap the arm */
       last = t;
+      if (!document.hidden) {
+        phase.current += dt * spd;
+        armX.current = W / 2 + Math.sin(phase.current) * amp;
+        setArmPos(armX.current); /* transform, not left — compositor-only, no per-frame layout */
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -167,7 +204,9 @@ function PattyStacker({ W = 360, H = 560 }) {
   const curType = stkPieceAt(pieceIdx);
 
   const start = () => {
-    setStack([]); setSlices([]); setStars([]);
+    droppingRef.current = false;
+    savingRef.current = false;
+    setStack([]); setSlices([]); setStars([]); setDropping(null); setCutFx(null);
     setScore(0); setStreak(0); setPieceIdx(0); setSaved(false);
     setMode('play');
   };
@@ -177,7 +216,9 @@ function PattyStacker({ W = 360, H = 560 }) {
      overlap, shear the overhang into a tumbling slice, and score it. The
      arm can't drop again until this one lands. */
   const drop = () => {
-    if (dropping) return;
+    if (droppingRef.current) return; /* ref guard: blocks multi-touch/same-frame double drops */
+    droppingRef.current = true;
+    sound.tick();
     const x = armX.current;
     const dx = x - top.x;
     const type = curType;
@@ -195,13 +236,15 @@ function PattyStacker({ W = 360, H = 560 }) {
 
     later(() => {
       setDropping(null);
+      droppingRef.current = false;
 
       if (miss) {
         /* no overlap — the whole piece shears off and tumbles, then game over */
+        sound.slice();
         setSlices((s) => s.concat({ id, left: x - top.w / 2, b: bottom, w: top.w, t: type, dir: dx > 0 ? 1 : -1 }));
-        later(() => setSlices((s) => s.filter((q) => q.id !== id)), 900);
         const qualifies = score > 0 && (board.length < 5 || score > board[board.length - 1].score);
-        later(() => setMode(qualifies ? 'entry' : 'over'), 220);
+        /* clear transient FX before the game-over veil so nothing flickers under it */
+        later(() => { setSlices([]); setStars([]); setCutFx(null); sound.over(); setMode(qualifies ? 'entry' : 'over'); }, 240);
         return;
       }
 
@@ -210,6 +253,7 @@ function PattyStacker({ W = 360, H = 560 }) {
         setScore((v) => v + 35 + bonus);
         const ns = streak + 1;
         setStreak(ns);
+        sound.perfect(ns);
         if (ns % 3 === 0) { setBanner(true); later(() => setBanner(false), 1600); }
         setFlashId(id);
         later(() => setFlashId((f) => (f === id ? null : f)), 520);
@@ -225,12 +269,18 @@ function PattyStacker({ W = 360, H = 560 }) {
         const sliceLeft = dx > 0 ? top.x + top.w / 2 : top.x - top.w / 2 - sw;
         setSlices((s) => s.concat({ id, left: sliceLeft, b: bottom, w: sw, t: type, dir: dx > 0 ? 1 : -1 }));
         later(() => setSlices((s) => s.filter((q) => q.id !== id)), 900);
+        sound.thud();
+        sound.slice();
+        const cutX = dx > 0 ? top.x + top.w / 2 : top.x - top.w / 2;
+        setCutFx({ id, x: cutX, b: bottom });
+        later(() => setCutFx((c) => (c && c.id === id ? null : c)), 300);
       }
       setPieceIdx((i) => i + 1);
     }, dur);
   };
 
   const onStage = () => {
+    sound.resume();
     if (mode === 'howto') {
       try { localStorage.setItem('cm-stacker-howto', '1'); } catch (e) {}
       start();
@@ -241,6 +291,8 @@ function PattyStacker({ W = 360, H = 560 }) {
   };
 
   const saveScore = (ini) => {
+    if (savingRef.current) return; /* no double-submit on a fast second tap */
+    savingRef.current = true;
     const initials = (ini || 'CM').slice(0, 3);
     const next = board
       .concat({ ini: initials, score })
@@ -258,9 +310,26 @@ function PattyStacker({ W = 360, H = 560 }) {
 
   const off = Math.max(0, STK.baseB + stack.length * STK.layerH - (H - 230));
 
+  const stageLabel =
+    mode === 'howto' ? 'Patty Stacker — press Enter or Space to start'
+    : mode === 'idle' ? 'Press Enter or Space to start stacking'
+    : mode === 'play' ? 'Press Enter or Space to drop the patty'
+    : 'Patty Stacker';
+
   return (
     <div className="stk-col">
-      <div className="stk-stage" style={{ width: W, height: H }} onPointerDown={onStage}>
+      <div
+        className="stk-stage"
+        style={{ width: W, height: H }}
+        onPointerDown={onStage}
+        role="button"
+        tabIndex={0}
+        aria-label={stageLabel}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return; /* let the sound button / initials input handle their own keys */
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onStage(); }
+        }}
+      >
         <div className="stk-hud">
           <div>
             <span className="cm-label stk-hud__lab">Score</span>
@@ -278,7 +347,14 @@ function PattyStacker({ W = 360, H = 560 }) {
               aria-pressed={!muted}
               aria-label={muted ? 'Sound off' : 'Sound on'}
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => setMuted((m) => !m)}
+              onClick={() => {
+                sound.resume();
+                setMuted((m) => {
+                  const next = !m;
+                  try { localStorage.setItem('cm-stacker-muted', next ? '1' : '0'); } catch (e) {}
+                  return next;
+                });
+              }}
             >
               <SpeakerGlyph muted={muted} />
             </button>
@@ -316,11 +392,17 @@ function PattyStacker({ W = 360, H = 560 }) {
             <div
               key={s.id}
               className="stk-slice"
-              style={{ left: s.left, bottom: s.b, width: s.w, height: STK.layerH, '--rot': s.dir * 120 + 'deg', '--dx': s.dir * 60 + 'px' }}
+              style={{ left: s.left, bottom: s.b, width: s.w, height: STK.layerH, '--rot': s.dir * 220 + 'deg', '--dx': s.dir * 90 + 'px' }}
             >
               <PieceSVG type={s.t} />
             </div>
           ))}
+          {cutFx ? (
+            <span
+              className="stk-cutflash"
+              style={{ left: cutFx.x - 1.5, bottom: cutFx.b - STK.layerH * 0.25, height: STK.layerH * 1.5 }}
+            />
+          ) : null}
           {stars.map((st) => (
             <span key={st.id} className="stk-starpop" style={{ left: st.x, bottom: st.b }}>★<b>{st.label}</b></span>
           ))}
@@ -329,7 +411,7 @@ function PattyStacker({ W = 360, H = 560 }) {
         <div className="stk-counter" />
 
         {armActive ? (
-          <div ref={armRef} className="stk-arm" style={{ left: armX.current }}>
+          <div ref={armRef} className="stk-arm" style={{ transform: 'translateX(' + armX.current + 'px)' }}>
             <span className="stk-arm__rod" />
             <span className="stk-claw"><ClawGlyph /></span>
             <div className="stk-arm__piece" style={{ width: top.w, marginLeft: -top.w / 2, height: STK.layerH }}>
@@ -356,7 +438,23 @@ function PattyStacker({ W = 360, H = 560 }) {
   );
 }
 
+/* The stage coordinate system is in absolute px, so the stage box width must
+   match the viewport or the right edge of the playfield clips on small phones.
+   Track it and recompute on resize/orientation change. */
+function useStageWidth(mobile) {
+  const calc = () => (mobile ? Math.min(343, window.innerWidth - 32) : 360);
+  const [w, setW] = React.useState(calc);
+  React.useEffect(() => {
+    const onResize = () => setW(calc());
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [mobile]);
+  return w;
+}
+
 export function GameScreen({ mobile }) {
+  const W = useStageWidth(mobile);
   return (
     <Screen mobile={mobile} label={mobile ? 'While You Wait — mobile' : 'While You Wait — desktop'}>
       <Nav mobile={mobile} active="" />
@@ -368,11 +466,7 @@ export function GameScreen({ mobile }) {
           </h1>
           <p className="stk-sub">Stack 'em while we smash 'em. Your order's coming.</p>
         </header>
-        <PattyStacker W={mobile ? 343 : 360} H={mobile ? 540 : 560} />
-        <div className="stk-notes">
-          <SpecNote>Sound: tawa-sizzle on drop · click on slice · ding on perfect — muted by default</SpecNote>
-          <SpecNote>Prototype fakes: physics · localStorage leaderboard · sound</SpecNote>
-        </div>
+        <PattyStacker W={W} H={mobile ? 540 : 560} />
       </main>
       {mobile ? <CallBar /> : null}
     </Screen>

@@ -146,9 +146,9 @@
   grid-template-columns: 1.05fr 0.95fr;
   gap: var(--space-8);
   align-items: center;
-  max-width: 1200px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: var(--space-12) var(--space-8);
+  padding: var(--space-12) var(--space-6);
 }
 .pt-hero__copy { display: grid; gap: var(--space-5); justify-items: start; }
 .pt-hero__h {
@@ -234,14 +234,6 @@
   border-top: 1px solid var(--color-border);
 }
 .pt-callbar .cm-btn { flex: 1; justify-content: center; }
-
-/* poke nudge under the hero burger */
-.pt-poke {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-text-muted);
-}
 
 /* ---------- About ---------- */
 .pt-about__logo { display: grid; justify-items: center; }
@@ -452,8 +444,6 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 .pt-mobile .pt-admin-grid { grid-template-columns: 1fr; }
 .pt-mobile .pt-toolbar { align-items: stretch; flex-direction: column; }
 .pt-mobile .pt-toolbar .cm-field { max-width: none; }
-/* leave room for the sticky call bar */
-.pt-mobile { padding-bottom: 76px; }
 
 /* ============================================================
    Focus + reduced motion
@@ -517,9 +507,13 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
   align-items: center;
   justify-content: center;
 }
+/* admin's small ghost actions still clear 44px on touch */
+.pt-mobile .cm-btn--sm { min-height: 44px; }
 
-/* ---- Anchor jumps: keep section headers clear of the sticky nav ---- */
-#home, #menu, #about, #team, #visit { scroll-margin-top: 88px; }
+/* ---- Anchor jumps: a little breathing room above a jumped-to section ----
+   (no header is pinned over the lower sections — the nav is confined to the
+   hero's overflow:hidden box — so a small offset, not the full nav height) */
+#home, #menu, #about, #team, #visit { scroll-margin-top: var(--space-5); }
 
 /* ---- Mobile overflow: long display titles must wrap, not blow out ----
    The DS section-header title is a nowrap flex row at 44px Anton. A long
@@ -553,8 +547,33 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
   line-height: 1.25;
   text-align: center;
 }
-.pt-mobile { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+/* Reserve call-bar space only where a fixed CallBar actually sits at the
+   bottom of the scroll: the last site section (the footer) and the game page.
+   Other screens no longer carry a wasted 76px gap. */
+.site-page .pt-mobile:last-child { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+.game-page .pt-mobile { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 .pt-themebar { bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); }
+
+/* mobile section nav — a compact horizontal-scroll row under the nav */
+.pt-nav__scroll {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.pt-nav__scroll::-webkit-scrollbar { display: none; }
+.pt-nav__scroll .cm-nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  white-space: nowrap;
+}
+.pt-nav__scroll .pt-nav__pennant { margin-left: var(--space-1); flex: none; }
 
 /* compact game shortcut in the mobile nav action row */
 .pt-nav__game {

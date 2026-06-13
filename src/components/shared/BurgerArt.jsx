@@ -107,8 +107,11 @@ export function ExplodedBurger({ size = 420 }) {
             </span>
           ))}
         </span>
-        <span className={'pt-spice__label' + (unlocked ? ' is-max' : '')} aria-live="polite">
+        <span className={'pt-spice__label' + (unlocked ? ' is-max' : '')} aria-hidden="true">
           {SPICE_LABELS[spice]}
+        </span>
+        <span className="sr-only" aria-live="polite">
+          {spice === 0 ? '' : unlocked ? 'Inferno spice level unlocked' : 'Spice level ' + spice + ' of ' + MAX_SPICE}
         </span>
       </div>
     </div>

@@ -42,7 +42,7 @@ function Cards({ items }) {
           description={it.description}
           badges={it.badges || []}
           image={it.image}
-          showMedia={it.name === 'The Red Hulk' || !!it.image}
+          showMedia={!!it.image}
         />
       ))}
     </div>
@@ -129,7 +129,7 @@ export function MenuScreen({ mobile, showNav = true }) {
       {showNav && !mobile ? <Nav mobile={false} active="Menu" /> : null}
       <div className="pt-section" id="menu">
         <SectionHeader title="THE MENU" accent="MENU" script="see" kicker="Smash hits" />
-        <Tabs items={data.categories} active={tab} onChange={(i) => { setTab(i); setQuery(''); }} sticky />
+        <Tabs items={data.categories} active={query.trim() ? -1 : tab} onChange={(i) => { setTab(i); setQuery(''); }} sticky />
         <div className="pt-toolbar">
           <Input
             label="Search"

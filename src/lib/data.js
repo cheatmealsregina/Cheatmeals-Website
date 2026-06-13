@@ -111,9 +111,11 @@ export function loadSiteContent() {
       out.instagram = kv.instagram.handle;
       out.instagramUrl = kv.instagram.url;
     }
-    if (kv.about) out.about = kv.about;
-    if (kv.hours) out.hours = kv.hours;
-    if (kv.team) out.team = kv.team;
+    /* Type-guard so a malformed live value can't override the safe bundled
+       default and crash a screen (TeamScreen/HoursTable map over these). */
+    if (kv.about && typeof kv.about === 'object' && !Array.isArray(kv.about)) out.about = kv.about;
+    if (Array.isArray(kv.hours)) out.hours = kv.hours;
+    if (Array.isArray(kv.team)) out.team = kv.team;
     return out;
   })().catch((e) => {
     siteCache = null;
