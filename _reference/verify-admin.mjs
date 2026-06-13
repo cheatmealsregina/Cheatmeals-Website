@@ -125,7 +125,7 @@ async function setInput(p, selector, value) {
 const browser = await puppeteer.launch({ executablePath: EDGE, headless: 'new', args: ['--force-device-scale-factor=1'] });
 try {
   const p = await browser.newPage();
-  await p.setViewport({ width: 390, height: 844 });
+  await p.setViewport({ width: 375, height: 812 });
   p.on('pageerror', (e) => fail.push('pageerror: ' + e.message.slice(0, 120)));
   await instrument(p);
 
@@ -137,8 +137,12 @@ try {
   await p.evaluate(() => [...document.querySelectorAll('.pt-login__card button')].find((b) => b.textContent.includes('Sign In')).click());
   await p.waitForSelector('.cm-editor-row', { timeout: 15000 });
   const rowCount = await p.$$eval('.cm-editor-row', (els) => els.length);
-  out.push(`editor loaded with ${rowCount} item rows (Aloo Burgers)`);
-  if (rowCount !== 13) fail.push(`expected 13 Aloo rows, got ${rowCount}`);
+  /* compare against the live database, not a hard-coded count */
+  const liveAloo = await fetch(`${SB_URL}/rest/v1/items?select=id&category_id=eq.1`, { headers: { apikey: ANON_KEY, authorization: 'Bearer ' + ANON_KEY } }).then((r) => r.json());
+  out.push(`editor loaded with ${rowCount} item rows (live DB has ${liveAloo.length})`);
+  if (rowCount !== liveAloo.length) fail.push(`expected ${liveAloo.length} Aloo rows, got ${rowCount}`);
+  /* pick dynamic targets so the harness survives data edits */
+  const targetName = await p.evaluate(() => document.querySelector('.cm-editor-row .cm-editor-row__name').textContent);
 
   // ---------- edit price (13.49) ----------
   await p.evaluate(() => {
@@ -174,10 +178,10 @@ try {
     .catch(() => fail.push('row does not render N/A'));
 
   // ---------- availability toggle (optimistic) ----------
-  await p.evaluate(() => {
-    const row = [...document.querySelectorAll('.cm-editor-row')].find((r) => r.textContent.includes('The Red Hulk'));
+  await p.evaluate((nm) => {
+    const row = [...document.querySelectorAll('.cm-editor-row')].find((r) => r.textContent.includes(nm));
     row.querySelector('.cm-toggle input').click();
-  });
+  }, targetName);
   await sleep(400);
   w = writes.filter((x) => x.method === 'PATCH' && x.url.includes('/items')).pop();
   if (!w || w.body.is_available !== false) fail.push('availability PATCH wrong: ' + JSON.stringify(w && w.body));
@@ -204,10 +208,12 @@ try {
   else out.push('failed write -> toggle rolled back + error toast');
   failWrites = false;
 
-  // ---------- add item ----------
-  await p.evaluate(() => {
-    const group = [...document.querySelectorAll('.pt-rowgroup')].find((g) => g.textContent.includes('DOUBLE'));
-    [...group.querySelectorAll('button')].find((b) => b.textContent.includes('Add item')).click();
+  // ---------- add item (first group, whatever it is) ----------
+  const groupTitle = await p.evaluate(() => {
+    const g = document.querySelector('.pt-rowgroup');
+    const label = g.querySelector('.pt-rowgroup__head .cm-label').textContent;
+    [...g.querySelectorAll('button')].find((b) => b.textContent.includes('Add item')).click();
+    return label.split('·')[0].trim();
   });
   await p.waitForSelector('.pt-editcard');
   await setInput(p, '.pt-editcard .cm-field:nth-of-type(1) .cm-input', 'Test Burger');
@@ -215,9 +221,10 @@ try {
   await p.evaluate(() => [...document.querySelectorAll('.pt-editcard__actions button')].find((b) => b.textContent === 'Save').click());
   await sleep(400);
   w = writes.filter((x) => x.method === 'POST' && x.url.includes('/items')).pop();
-  if (!w || w.body.name !== 'Test Burger' || w.body.price !== 9.99 || w.body.section !== 'DOUBLE' || typeof w.body.sort_order !== 'number') {
+  const wantSection = groupTitle === 'Items' ? null : groupTitle;
+  if (!w || w.body.name !== 'Test Burger' || w.body.price !== 9.99 || w.body.section !== wantSection || typeof w.body.sort_order !== 'number') {
     fail.push('add item POST wrong: ' + JSON.stringify(w && w.body));
-  } else out.push(`add item -> POST {name, price, section: DOUBLE, sort_order: ${w.body.sort_order}}`);
+  } else out.push(`add item -> POST {name, price, section: ${w.body.section}, sort_order: ${w.body.sort_order}}`);
   await p.waitForFunction(() => [...document.querySelectorAll('.cm-editor-row')].some((r) => r.textContent.includes('Test Burger')), { timeout: 5000 })
     .then(() => out.push('new row appears'))
     .catch(() => fail.push('new row missing'));
@@ -291,10 +298,10 @@ try {
   else out.push('category note -> PATCH categories {note}');
 
   // ---------- photo upload ----------
-  await p.evaluate(() => {
-    const row = [...document.querySelectorAll('.cm-editor-row')].find((r) => r.textContent.includes('The Red Hulk'));
+  await p.evaluate((nm) => {
+    const row = [...document.querySelectorAll('.cm-editor-row')].find((r) => r.textContent.includes(nm));
     row.querySelector('button.cm-btn').click();
-  });
+  }, targetName);
   await p.waitForSelector('.pt-editcard');
   const fileInput = await p.$('.pt-editcard input[type=file]');
   await fileInput.uploadFile(TEST_IMG);
@@ -303,7 +310,7 @@ try {
     .catch(() => fail.push('no photo preview'));
   await sleep(300);
   const up = writes.find((x) => x.url.includes('/storage/v1/object/menu-photos/'));
-  if (!up || !/\/items\/1-\d+\.webp$/.test(up.url)) fail.push('storage upload wrong: ' + JSON.stringify(up));
+  if (!up || !/\/items\/\d+-\d+\.webp$/.test(up.url)) fail.push('storage upload wrong: ' + JSON.stringify(up));
   else out.push('upload -> storage menu-photos/items/<id>-<ts>.webp');
   w = writes.filter((x) => x.method === 'PATCH' && x.url.includes('/items')).pop();
   if (!w || !String(w.body.photo_url || '').includes('/storage/v1/object/public/menu-photos/items/')) {
@@ -359,11 +366,15 @@ try {
     });
     if (!img || !img.includes('menu-photos')) fail.push('public card photo missing: ' + img);
     else out.push('public menu card renders the photo from photo_url');
+    /* halftone fallback shows on media cards without an image — only "The
+       Red Hulk" always shows media, so skip gracefully if it's off the menu */
     const halftone = await p2.evaluate(() => {
       const card = [...document.querySelectorAll('#menu .cm-menu-card')].find((c) => c.textContent.includes('The Red Hulk'));
-      return !!(card && card.querySelector('.cm-menu-card__media.cm-halftone'));
+      if (!card) return 'absent';
+      return card.querySelector('.cm-menu-card__media.cm-halftone') ? 'ok' : 'missing';
     });
-    if (!halftone) fail.push('halftone fallback missing on photo-less media card');
+    if (halftone === 'missing') fail.push('halftone fallback missing on photo-less media card');
+    else if (halftone === 'absent') out.push('halftone check skipped (The Red Hulk not on the menu)');
     else out.push('halftone fallback intact for cards without photos');
     await p2.close();
   }
