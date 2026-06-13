@@ -129,7 +129,7 @@
 .stk-chilis { display: inline-flex; gap: 2px; color: var(--cm-red); }
 .stk-sound {
   pointer-events: auto;
-  width: 36px; height: 36px;
+  width: 44px; height: 44px;
   display: grid; place-items: center;
   border-radius: var(--radius-full);
   border: 1.5px solid var(--color-border);

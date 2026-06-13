@@ -1,5 +1,10 @@
 /* App-level layout — the DS body defaults stay inside .cm-screen */
 *, *::before, *::after { box-sizing: border-box; }
+
+/* Smooth anchor scrolling for the in-page nav/CTAs (disabled below for
+   reduced-motion users alongside the boot + page-fade animations). */
+html { scroll-behavior: smooth; }
+
 body {
   margin: 0;
   background: var(--color-bg, #faf6ef);
@@ -53,4 +58,14 @@ body {
   min-height: 100dvh;
   background: var(--color-bg);
   color: var(--color-text);
+}
+
+/* Reduced motion — the boot loader and page fade live outside .cm-screen,
+   so the DS scaffold's reduced-motion guard never reaches them. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .pt-boot__dot,
+  .site-page, .game-page, .admin-page {
+    animation: none !important;
+  }
 }

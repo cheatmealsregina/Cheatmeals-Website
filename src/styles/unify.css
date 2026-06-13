@@ -24,13 +24,15 @@
 .cm-badge--spicy { background: var(--color-tag-bg); color: var(--color-tag-text); }
 
 /* ---- D3 (applied): call button = red outline (dark system) ----
-   Keeps "one red fill per view" intact when a primary CTA is present. */
+   Keeps "one red fill per view" intact when a primary CTA is present.
+   Text/border use --cm-red-hover (#D40310, 5.5:1 on white) — pure brand
+   red #FB0403 is only 4.1:1 and fails AA at the button's 14–16px label. */
 .cm-btn--call {
   background: transparent;
-  color: var(--cm-red);
-  border-color: var(--cm-red);
+  color: var(--cm-red-hover);
+  border-color: var(--cm-red-hover);
 }
-.cm-btn--call:hover { background: var(--cm-red); color: var(--cm-white); }
+.cm-btn--call:hover { background: var(--cm-red-hover); color: var(--cm-white); }
 
 /* ---- D4 (applied): ink toast keeps a hairline on dark ---- */
 [data-theme="dark"] .cm-toast { border: 1px solid var(--cm-line); }
@@ -293,7 +295,11 @@
   border-radius: var(--radius-lg);
   display: grid;
   place-items: center;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
+a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 .pt-visit__pin {
   display: grid;
   justify-items: center;
@@ -350,15 +356,27 @@
   position: sticky;
   top: var(--space-4);
 }
-.pt-tree a {
+.pt-tree a,
+.pt-tree button {
   color: var(--color-text);
   text-decoration: none;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
 }
-.pt-tree a:hover { background: var(--color-surface-2); }
-.pt-tree a[aria-current="true"] { background: var(--color-surface-2); color: var(--cm-red); font-weight: 600; }
+.pt-tree button {
+  appearance: none;
+  border: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+}
+.pt-tree a:hover,
+.pt-tree button:hover { background: var(--color-surface-2); }
+.pt-tree a[aria-current="true"],
+.pt-tree button[aria-current="true"] { background: var(--color-surface-2); color: var(--cm-red-hover); font-weight: 600; }
 .pt-tree__sub { display: grid; gap: 2px; padding-left: var(--space-4); }
 .pt-rowgroup { display: grid; gap: var(--space-3); }
 .pt-rowgroup__head {
@@ -452,3 +470,77 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================
+   A11y + mobile hardening (override layer)
+   Edits here are DesignSync-safe — they sit on top of the
+   generated DS stylesheet rather than inside it.
+   ============================================================ */
+
+/* ---- Contrast: small red text/fills must clear AA (4.5:1) ----
+   Brand red #FB0403 on white is 4.1:1 — fine for the big Anton prices
+   (large text needs only 3:1) but failing for small UI text. Swap the
+   small-text fills/labels to --cm-red-hover (#D40310 → 5.5:1 on white).
+   Prices, the display key-word, stars and dotted rules keep pure red. */
+.cm-announce { background: var(--cm-red-hover); }
+.cm-announce__close:hover { background: var(--cm-red); }
+.cm-btn--primary { background: var(--cm-red-hover); }
+.cm-btn--primary:hover { background: var(--cm-red); }
+.cm-badge--pick { background: var(--cm-red-hover); }
+.cm-pennant { background: var(--cm-red-hover); }
+.cm-nav__link:hover,
+.cm-nav__link--active,
+.cm-nav__link--active:hover { color: var(--cm-red-hover); }
+
+/* Spicy badge — #D40310 on the #FCB3B3 tint is only ~3.2:1. Darken the
+   text on light, and give dark mode a light-red label on a deep wash. */
+.cm-badge--spicy { color: #7A0202; }
+[data-theme="dark"] .cm-badge--spicy {
+  background: color-mix(in srgb, var(--cm-red) 24%, transparent);
+  color: #FFD9D9;
+}
+
+/* Placeholder text — opacity 0.7 drops the muted grey below AA. */
+.cm-input::placeholder { color: var(--color-text-muted); opacity: 1; }
+
+/* ---- Touch targets: everything tappable clears 44×44 ---- */
+.cm-announce__close {
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+}
+.pt-badgepick button {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- Anchor jumps: keep section headers clear of the sticky nav ---- */
+#home, #menu, #about, #team, #visit { scroll-margin-top: 88px; }
+
+/* ---- Mobile: respect the iOS home-indicator safe area ---- */
+.pt-callbar {
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+}
+.pt-mobile { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+.pt-themebar { bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); }
+
+/* compact game shortcut in the mobile nav action row */
+.pt-nav__game {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  flex: none;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.pt-nav__game:hover { border-color: var(--color-text-muted); color: var(--cm-red-hover); }
+.pt-nav__game:active { transform: scale(0.96); }

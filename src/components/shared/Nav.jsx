@@ -46,6 +46,14 @@ export function Nav({ mobile, active = '' }) {
         >
           <Icon name="instagram" size={20} />
         </a>
+        {mobile ? (
+          <a className="pt-nav__game" href="/game" aria-label="Play the burger stacker while you wait">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="2" y="6" width="20" height="12" rx="4" />
+              <path d="M7 10v4 M5 12h4 M15 11h.01 M18.5 13.5h.01" />
+            </svg>
+          </a>
+        ) : null}
         <ThemeToggle />
         {!mobile ? <Button variant="call" href={data.tel}>Call to Order</Button> : null}
       </div>

@@ -50,7 +50,13 @@ export function ExplodedBurger({ size = 420 }) {
       className={'pt-xb' + (smash ? ' pt-xb--smash' : '') + (egg ? ' pt-xb--egg' : '')}
       style={{ width: size, height: size * (1402 / 1122) * 0.82 }}
       onPointerDown={onPoke}
-      role="img"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onPoke();
+        }
+      }}
+      role="button"
       aria-label="CheatMeals burger badge — poke it"
       tabIndex={0}
     >

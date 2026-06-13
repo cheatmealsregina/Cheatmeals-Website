@@ -65,22 +65,23 @@ export function AdminLogin({ mobile = true }) {
       setBusy(false);
     }
   };
-  const onEnter = (e) => {
-    if (e.key === 'Enter') signIn();
-  };
 
   return (
     <Screen mobile={mobile} label="Admin — login">
       <div className="pt-login">
         <Logo variant="icon" height={88} counter="var(--color-bg)" label="CheatMeals" />
         <h1 className="cm-display" style={{ margin: 0, fontSize: 'var(--text-3xl)' }}>ADMIN</h1>
-        <div className="pt-login__card">
+        <form
+          className="pt-login__card"
+          onSubmit={(e) => { e.preventDefault(); signIn(); }}
+        >
           <Input
-            label="Phone or email"
-            placeholder="(306) 541-9198"
+            label="Email"
+            type="email"
+            inputMode="email"
+            placeholder="you@cheatmeals.ca"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            onKeyDown={onEnter}
             autoComplete="username"
           />
           <Input
@@ -88,12 +89,11 @@ export function AdminLogin({ mobile = true }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={onEnter}
             error={error || undefined}
             autoComplete="current-password"
           />
-          <Button variant="primary" size="lg" onClick={signIn} disabled={busy}>Sign In</Button>
-        </div>
+          <Button type="submit" variant="primary" size="lg" disabled={busy}>Sign In</Button>
+        </form>
         <span className="cm-label" style={{ color: 'var(--color-text-muted)' }}>Staff only · cheatmeals.ca/admin</span>
       </div>
     </Screen>
@@ -219,6 +219,25 @@ function EditCard({ item, section, categoryId, nextSort, onDone, onDeleted, onPa
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const cardRef = React.useRef(null);
 
+  /* The DS Modal ships role/aria-modal but no keyboard behaviour. For a
+     destructive confirm we add Escape-to-close, move focus into the dialog
+     on open, and restore it to the trigger on close. */
+  React.useEffect(() => {
+    if (!confirmDelete) return;
+    const opener = document.activeElement;
+    const onKey = (e) => { if (e.key === 'Escape') setConfirmDelete(false); };
+    document.addEventListener('keydown', onKey);
+    const focusTimer = setTimeout(() => {
+      const btn = document.querySelector('.cm-modal button');
+      if (btn) btn.focus();
+    }, 0);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      clearTimeout(focusTimer);
+      if (opener && typeof opener.focus === 'function') opener.focus();
+    };
+  }, [confirmDelete]);
+
   const flip = (k) => setBadges({ ...badges, [k]: !badges[k] });
 
   const onFiles = async (files) => {
@@ -324,7 +343,7 @@ function EditCard({ item, section, categoryId, nextSort, onDone, onDeleted, onPa
         </div>
       </div>
       <Toggle label="Available" checked={avail} onChange={setAvail} />
-      {photoUrl ? <img className="pt-editcard__photo" src={photoUrl} alt={name || 'Item photo'} /> : null}
+      {photoUrl ? <img className="pt-editcard__photo" src={photoUrl} alt={name || 'Item photo'} loading="lazy" decoding="async" /> : null}
       <Dropzone onFiles={onFiles} hint={photoUrl ? 'Drop a new photo to replace it' : undefined} />
       <div className="pt-editcard__actions">
         {!isNew ? (
@@ -831,22 +850,22 @@ export function AdminEditor({ mobile = true }) {
           <nav className="pt-tree" aria-label="Menu tree">
             <span className="cm-label" style={{ color: 'var(--color-text-muted)', padding: 'var(--space-2) var(--space-3)' }}>Menu</span>
             {db.cats.map((c, i) => (
-              <a
+              <button
                 key={c.id}
-                href="#"
+                type="button"
                 aria-current={view === 0 && i === tab ? 'true' : undefined}
-                onClick={(e) => { e.preventDefault(); setView(0); setTab(i); }}
+                onClick={() => { setView(0); setTab(i); }}
               >
                 {c.name}
-              </a>
+              </button>
             ))}
-            <a
-              href="#"
+            <button
+              type="button"
               aria-current={view === 1 ? 'true' : undefined}
-              onClick={(e) => { e.preventDefault(); setView(1); }}
+              onClick={() => setView(1)}
             >
               Site content
-            </a>
+            </button>
           </nav>
           <div style={{ display: 'grid', gap: 'var(--space-6)' }}>
             {body}

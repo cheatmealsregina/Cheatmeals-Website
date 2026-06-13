@@ -716,7 +716,9 @@ function MenuItemCard({
     className: "cm-menu-card__media" + (image ? "" : " cm-halftone")
   }, image ? /*#__PURE__*/React.createElement("img", {
     src: image,
-    alt: name
+    alt: name,
+    loading: "lazy",
+    decoding: "async"
   }) : /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "burger",
     size: 48,
