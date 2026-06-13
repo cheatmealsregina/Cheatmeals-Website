@@ -521,6 +521,27 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 /* ---- Anchor jumps: keep section headers clear of the sticky nav ---- */
 #home, #menu, #about, #team, #visit { scroll-margin-top: 88px; }
 
+/* ---- Mobile overflow: long display titles must wrap, not blow out ----
+   The DS section-header title is a nowrap flex row at 44px Anton. A long
+   title (e.g. "THE PEOPLE BEHIND THE PATTIES") forced its width to ~660px,
+   which widened the whole section and pushed the card grid below it to
+   3×220px columns — clipping every card past the viewport edge. Let the
+   title wrap, shrink it on mobile, and stop the grids from ever sizing a
+   column wider than their container. */
+.cm-section-header { max-width: 100%; }
+.cm-section-header__title {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+.pt-section, .pt-cards, .pt-team { min-width: 0; }
+.pt-cards { grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); }
+.pt-team { grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); }
+
+.pt-mobile .cm-section-header__title { font-size: clamp(26px, 8vw, 36px); gap: var(--space-3); }
+.pt-mobile .pt-subhead .cm-section-header__title { font-size: var(--text-xl); }
+
 /* ---- Mobile: respect the iOS home-indicator safe area ---- */
 .pt-callbar {
   padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
