@@ -125,6 +125,7 @@ function PattyStacker({ W = 360, H = 560 }) {
     try { return localStorage.getItem('cm-stacker-howto') ? 'idle' : 'howto'; } catch (e) { return 'howto'; }
   });
   const [stack, setStack] = React.useState([]);
+  const [dropping, setDropping] = React.useState(null);
   const [slices, setSlices] = React.useState([]);
   const [stars, setStars] = React.useState([]);
   const [score, setScore] = React.useState(0);
@@ -171,40 +172,62 @@ function PattyStacker({ W = 360, H = 560 }) {
     setMode('play');
   };
 
+  /* Drop = a real fall, then a commit. The piece releases from the arm's
+     position and falls to the landing height; once it lands we keep the
+     overlap, shear the overhang into a tumbling slice, and score it. The
+     arm can't drop again until this one lands. */
   const drop = () => {
+    if (dropping) return;
     const x = armX.current;
     const dx = x - top.x;
     const type = curType;
     const bonus = type === 'bun' ? 50 : 0;
-    if (Math.abs(dx) >= top.w) {
-      const qualifies = score > 0 && (board.length < 5 || score > board[board.length - 1].score);
-      setMode(qualifies ? 'entry' : 'over');
-      return;
-    }
     const id = idRef.current++;
     const bottom = STK.baseB + stack.length * STK.layerH;
-    if (Math.abs(dx) <= STK.perfect) {
-      setStack((s) => s.concat({ id, x: top.x, w: top.w, t: type }));
-      setScore((v) => v + 35 + bonus);
-      const ns = streak + 1;
-      setStreak(ns);
-      if (ns % 3 === 0) { setBanner(true); later(() => setBanner(false), 1600); }
-      setFlashId(id);
-      later(() => setFlashId((f) => (f === id ? null : f)), 520);
-      setStars((s) => s.concat({ id, x: top.x, b: bottom + STK.layerH + 6, label: 'PERFECT +' + (25 + bonus) }));
-      later(() => setStars((s) => s.filter((q) => q.id !== id)), 950);
-    } else {
-      const w2 = top.w - Math.abs(dx);
-      const x2 = (x + top.x) / 2;
-      setStack((s) => s.concat({ id, x: x2, w: w2, t: type }));
-      setScore((v) => v + 10 + bonus);
-      setStreak(0);
-      const sw = Math.abs(dx);
-      const sliceLeft = dx > 0 ? top.x + top.w / 2 : top.x - top.w / 2 - sw;
-      setSlices((s) => s.concat({ id, left: sliceLeft, b: bottom, w: sw, t: type, dir: dx > 0 ? 1 : -1 }));
-      later(() => setSlices((s) => s.filter((q) => q.id !== id)), 900);
-    }
-    setPieceIdx((i) => i + 1);
+    const miss = Math.abs(dx) >= top.w;
+
+    /* distance from the landing spot up to the arm (top ~82px), so the piece
+       falls from exactly where it was released regardless of stack height */
+    const fall = Math.max(120, H - bottom - STK.layerH + off - 82);
+    const dur = Math.min(360, Math.max(190, Math.round(fall * 0.6)));
+
+    setDropping({ id, x, w: top.w, t: type, b: bottom, fall, dur });
+
+    later(() => {
+      setDropping(null);
+
+      if (miss) {
+        /* no overlap — the whole piece shears off and tumbles, then game over */
+        setSlices((s) => s.concat({ id, left: x - top.w / 2, b: bottom, w: top.w, t: type, dir: dx > 0 ? 1 : -1 }));
+        later(() => setSlices((s) => s.filter((q) => q.id !== id)), 900);
+        const qualifies = score > 0 && (board.length < 5 || score > board[board.length - 1].score);
+        later(() => setMode(qualifies ? 'entry' : 'over'), 220);
+        return;
+      }
+
+      if (Math.abs(dx) <= STK.perfect) {
+        setStack((s) => s.concat({ id, x: top.x, w: top.w, t: type }));
+        setScore((v) => v + 35 + bonus);
+        const ns = streak + 1;
+        setStreak(ns);
+        if (ns % 3 === 0) { setBanner(true); later(() => setBanner(false), 1600); }
+        setFlashId(id);
+        later(() => setFlashId((f) => (f === id ? null : f)), 520);
+        setStars((s) => s.concat({ id, x: top.x, b: bottom + STK.layerH + 6, label: 'PERFECT +' + (25 + bonus) }));
+        later(() => setStars((s) => s.filter((q) => q.id !== id)), 950);
+      } else {
+        const w2 = top.w - Math.abs(dx);
+        const x2 = (x + top.x) / 2;
+        setStack((s) => s.concat({ id, x: x2, w: w2, t: type }));
+        setScore((v) => v + 10 + bonus);
+        setStreak(0);
+        const sw = Math.abs(dx);
+        const sliceLeft = dx > 0 ? top.x + top.w / 2 : top.x - top.w / 2 - sw;
+        setSlices((s) => s.concat({ id, left: sliceLeft, b: bottom, w: sw, t: type, dir: dx > 0 ? 1 : -1 }));
+        later(() => setSlices((s) => s.filter((q) => q.id !== id)), 900);
+      }
+      setPieceIdx((i) => i + 1);
+    }, dur);
   };
 
   const onStage = () => {
@@ -273,6 +296,22 @@ function PattyStacker({ W = 360, H = 560 }) {
               <PieceSVG type={L.t} />
             </div>
           ))}
+          {dropping ? (
+            <div
+              key={dropping.id}
+              className="stk-falling"
+              style={{
+                left: dropping.x - dropping.w / 2,
+                bottom: dropping.b,
+                width: dropping.w,
+                height: STK.layerH,
+                '--fall': dropping.fall + 'px',
+                '--fall-dur': dropping.dur + 'ms',
+              }}
+            >
+              <PieceSVG type={dropping.t} />
+            </div>
+          ) : null}
           {slices.map((s) => (
             <div
               key={s.id}
@@ -294,7 +333,7 @@ function PattyStacker({ W = 360, H = 560 }) {
             <span className="stk-arm__rod" />
             <span className="stk-claw"><ClawGlyph /></span>
             <div className="stk-arm__piece" style={{ width: top.w, marginLeft: -top.w / 2, height: STK.layerH }}>
-              <PieceSVG type={curType} />
+              {dropping ? null : <PieceSVG type={curType} />}
             </div>
           </div>
         ) : null}
