@@ -1,6 +1,8 @@
 import React from 'react';
 import * as ReactDOM from 'react-dom';
 import { createRoot } from 'react-dom/client';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import './styles/unify.css';
 import './styles/v2.css';
 import './styles/app.css';
@@ -18,8 +20,20 @@ function loadDS() {
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = DS_SRC;
-    s.onload = resolve;
-    s.onerror = () => reject(new Error('Failed to load design-system bundle: ' + DS_SRC));
+    /* Watchdog: a stalled request (hung TCP connect, captive portal) may never
+       fire onload/onerror, which would leave the boot Promise.all unsettled and
+       strand the user on the spinner. Reject after 8s so the boot catch renders
+       the graceful error UI instead of an infinite spinner. (The data half is
+       already bounded by its own 2.5s race; this covers the other boot input.) */
+    const timer = setTimeout(
+      () => reject(new Error('Design-system bundle load timed out: ' + DS_SRC)),
+      8000
+    );
+    s.onload = () => { clearTimeout(timer); resolve(); };
+    s.onerror = () => {
+      clearTimeout(timer);
+      reject(new Error('Failed to load design-system bundle: ' + DS_SRC));
+    };
     document.head.appendChild(s);
   });
 }
@@ -58,7 +72,17 @@ Promise.all([
     const errors = ds && ds.__errors;
     if (errors && errors.length) console.error('Design-system bundle errors:', errors);
     root.innerHTML = '';
-    createRoot(root).render(<App />);
+    /* Analytics (page views) + Speed Insights (real-user Core Web Vitals) are
+       Vercel-native: the scripts post to /_vercel/* only on the production
+       deployment, and no-op on localhost/preview. They must also be turned on
+       in the Vercel dashboard (Project → Analytics / Speed Insights → Enable). */
+    createRoot(root).render(
+      <>
+        <App />
+        <Analytics />
+        <SpeedInsights />
+      </>
+    );
   })
   .catch((err) => {
     /* DS bundle 404, App import failure, etc. — never leave the user on a

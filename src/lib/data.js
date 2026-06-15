@@ -105,7 +105,7 @@ export function loadMenu() {
         itemsData = b.items;
       } catch (e) { /* fall through to a direct query */ }
     }
-    if (!catsData || !itemsData) {
+    if (!catsData || !catsData.length || !itemsData) {
       const [cats, items] = await Promise.all([
         supabase
           .from('categories')
@@ -122,6 +122,11 @@ export function loadMenu() {
       catsData = cats.data;
       itemsData = items.data;
     }
+    /* An empty category list is never legitimate for a live menu — it means the
+       read silently returned nothing (an RLS/grant change or an emptied table
+       returning 200 with []). Throw so loadAll() rejects and main.jsx keeps the
+       bundled seed, rather than overwriting a good menu with an empty one. */
+    if (!catsData || !catsData.length) throw new Error('no menu categories returned');
     return reshapeMenu(catsData, itemsData);
   })().catch((e) => {
     menuCache = null;
