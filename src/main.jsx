@@ -29,8 +29,12 @@ function loadDS() {
    down, timeout) the bundled public/scripts/data.js data stays in place —
    the site never renders empty. */
 async function loadLiveData() {
+  /* Cap the wait on live data. In production the read is a CDN-cached
+     /api/bootstrap hit (usually tens of ms), so this only bites if both the
+     edge cache and Supabase are unreachable — then we fall back to the bundled
+     seed fast instead of staring at the boot spinner. */
   const timeout = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('Supabase request timed out')), 4000)
+    setTimeout(() => reject(new Error('Supabase request timed out')), 2500)
   );
   const { loadAll } = await import('./lib/data.js');
   window.CM_DATA = await Promise.race([loadAll(), timeout]);

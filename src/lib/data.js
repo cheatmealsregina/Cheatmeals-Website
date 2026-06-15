@@ -75,22 +75,54 @@ function reshapeMenu(cats, items) {
   return { categories, menus, asides };
 }
 
+/* In production the public reads come through the CDN-cached /api/bootstrap
+   endpoint, so Supabase is touched ~once a minute no matter how many people are
+   on the site. A single in-flight request is shared by loadMenu +
+   loadSiteContent. On any failure we fall through to querying Supabase directly,
+   and the caller still falls back to the bundled seed — three layers, so a cold
+   cache or a missing endpoint can never blank the site. Dev (vite, no /api)
+   always uses the direct path. */
+let bootstrapPromise = null;
+function fetchBootstrap() {
+  return (bootstrapPromise ??= fetch('/api/bootstrap', { headers: { accept: 'application/json' } })
+    .then((r) => {
+      if (!r.ok) throw new Error('bootstrap ' + r.status);
+      return r.json();
+    })
+    .catch((e) => {
+      bootstrapPromise = null; // allow a later retry
+      throw e;
+    }));
+}
+
 export function loadMenu() {
   return (menuCache ??= (async () => {
-    const [cats, items] = await Promise.all([
-      supabase
-        .from('categories')
-        .select('id,name,note,is_dietary')
-        .order('sort_order'),
-      supabase
-        .from('items')
-        .select('category_id,section,name,description,price,badges,photo_url')
-        .eq('is_available', true)
-        .order('sort_order'),
-    ]);
-    if (cats.error) throw cats.error;
-    if (items.error) throw items.error;
-    return reshapeMenu(cats.data, items.data);
+    let catsData, itemsData;
+    if (import.meta.env.PROD) {
+      try {
+        const b = await fetchBootstrap();
+        catsData = b.categories;
+        itemsData = b.items;
+      } catch (e) { /* fall through to a direct query */ }
+    }
+    if (!catsData || !itemsData) {
+      const [cats, items] = await Promise.all([
+        supabase
+          .from('categories')
+          .select('id,name,note,is_dietary')
+          .order('sort_order'),
+        supabase
+          .from('items')
+          .select('category_id,section,name,description,price,badges,photo_url')
+          .eq('is_available', true)
+          .order('sort_order'),
+      ]);
+      if (cats.error) throw cats.error;
+      if (items.error) throw items.error;
+      catsData = cats.data;
+      itemsData = items.data;
+    }
+    return reshapeMenu(catsData, itemsData);
   })().catch((e) => {
     menuCache = null;
     throw e;
@@ -99,9 +131,16 @@ export function loadMenu() {
 
 export function loadSiteContent() {
   return (siteCache ??= (async () => {
-    const { data, error } = await supabase.from('site_content').select('key,value');
-    if (error) throw error;
-    const kv = Object.fromEntries(data.map((r) => [r.key, r.value]));
+    let rows;
+    if (import.meta.env.PROD) {
+      try { rows = (await fetchBootstrap()).site; } catch (e) { /* fall through */ }
+    }
+    if (!rows) {
+      const { data, error } = await supabase.from('site_content').select('key,value');
+      if (error) throw error;
+      rows = data;
+    }
+    const kv = Object.fromEntries(rows.map((r) => [r.key, r.value]));
     const out = {};
     if (kv.announcement) out.announcement = kv.announcement;
     if (kv.phone) out.phone = kv.phone;
@@ -126,6 +165,16 @@ export function loadSiteContent() {
 
 export function loadLeaderboard() {
   return (boardCache ??= (async () => {
+    /* prod: CDN-cached GET /api/leaderboard so every player doesn't hit the DB */
+    if (import.meta.env.PROD) {
+      try {
+        const r = await fetch('/api/leaderboard', { headers: { accept: 'application/json' } });
+        if (r.ok) {
+          const { top5 } = await r.json();
+          if (Array.isArray(top5)) return top5.map((e) => ({ ini: String(e.ini).trim(), score: e.score }));
+        }
+      } catch (e) { /* fall through to a direct query */ }
+    }
     const { data, error } = await supabase
       .from('leaderboard')
       .select('initials,score')

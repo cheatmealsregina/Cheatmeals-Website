@@ -33,8 +33,29 @@ function rateLimited(ip) {
 }
 
 export default async function handler(req, res) {
+  /* GET — return the cached top-5 so the game board read is served from the
+     CDN instead of every player hitting Supabase directly. */
+  if (req.method === 'GET') {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_ANON_KEY;
+    if (!url || !key) return res.status(500).json({ error: 'Server is not configured' });
+    const auth = { apikey: key, authorization: `Bearer ${key}` };
+    try {
+      const top = await fetch(
+        `${url}/rest/v1/leaderboard?select=initials,score&order=score.desc,created_at.asc&limit=5`,
+        { headers: auth }
+      );
+      if (!top.ok) return res.status(502).json({ error: 'Could not read the board' });
+      const top5 = (await top.json()).map((r) => ({ ini: r.initials.trim(), score: r.score }));
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=120');
+      return res.status(200).json({ top5 });
+    } catch (e) {
+      return res.status(502).json({ error: 'Could not read the board' });
+    }
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'GET, POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
