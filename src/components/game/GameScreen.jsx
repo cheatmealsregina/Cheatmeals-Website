@@ -33,10 +33,10 @@ function stkPieceAt(i) { return i % 7 === 6 ? 'bun' : STK_SEQ[i % STK_SEQ.length
 async function stkSubmitScore(ini, score) {
   try {
     if (import.meta.env.DEV) {
+      /* same upsert as prod (keep-the-best, one row per initials) via the
+         submit_score RPC, so local testing matches production behaviour */
       const { supabase } = await import('../../lib/supabase.js');
-      const { error } = await supabase
-        .from('leaderboard')
-        .insert({ initials: ini.padEnd(3, ' '), score });
+      const { error } = await supabase.rpc('submit_score', { p_initials: ini, p_score: score });
       if (error) throw error;
       const { data, error: selErr } = await supabase
         .from('leaderboard')
@@ -95,6 +95,9 @@ function GameOverCard({ score, entry = false, saved = false, onAgain, onSave, in
               onPointerDown={(e) => e.stopPropagation()}
             />
             <Button variant="primary" onClick={() => onSave(ini || 'CM')}>Save Score</Button>
+            {/* initials are only 3 letters, so two people can collide — the
+                board keeps one row per initials at their best score */}
+            <p className="stk-overcard__note">Same initials? You'll share the throne.</p>
           </React.Fragment>
         ) : (
           <React.Fragment>

@@ -90,12 +90,16 @@ export default async function handler(req, res) {
   }
   const auth = { apikey: key, authorization: `Bearer ${key}` };
 
-  const insert = await fetch(`${url}/rest/v1/leaderboard`, {
+  /* Upsert via the SECURITY DEFINER submit_score() function: one row per
+     initials, keeping the highest score. This is the only write path that can
+     UPDATE (anon's RLS policy is INSERT-only), so the "no duplicates, keep best"
+     rule can't be bypassed from the client. The function re-validates too. */
+  const upsert = await fetch(`${url}/rest/v1/rpc/submit_score`, {
     method: 'POST',
-    headers: { ...auth, 'content-type': 'application/json', prefer: 'return=minimal' },
-    body: JSON.stringify({ initials: initials.padEnd(3, ' '), score }),
+    headers: { ...auth, 'content-type': 'application/json' },
+    body: JSON.stringify({ p_initials: initials, p_score: score }),
   });
-  if (!insert.ok) {
+  if (!upsert.ok) {
     return res.status(502).json({ error: 'Could not save the score' });
   }
 
