@@ -10,7 +10,7 @@ import { loadLeaderboard } from '../../lib/data.js';
 const DS = window.CheatMealsDesignSystem_e4e564;
 
 const STK_SEQ = ['aloo', 'paneer', 'cheese', 'chutney', 'jalapeno'];
-const STK = { layerH: 22, baseW: 190, perfect: 5, baseB: 36 };
+const STK = { layerH: 22, baseW: 190, perfect: 5, baseB: 36, base: 10 };
 
 function stkLoadBoard() {
   try {
@@ -262,21 +262,29 @@ function PattyStacker({ W = 360, H = 560 }) {
       }
 
       if (Math.abs(dx) <= STK.perfect) {
-        setStack((s) => s.concat({ id, x: top.x, w: top.w, t: type }));
-        setScore((v) => v + 35 + bonus);
         const ns = streak + 1;
+        /* Combo multiplier: ×2 on the first perfect, +1 for each consecutive
+           one, capped at ×5. A perfect is worth base × multiplier (20–50 with
+           base 10), so consecutive perfects compound instead of paying a flat
+           bonus. Resets to ×1 on any non-perfect drop (the else branch). An
+           honest run stays well under the 9999 leaderboard cap. */
+        const m = Math.min(ns + 1, 5);
+        const pts = STK.base * m + bonus;
+        setStack((s) => s.concat({ id, x: top.x, w: top.w, t: type }));
+        setScore((v) => v + pts);
         setStreak(ns);
         sound.perfect(ns);
         if (ns % 3 === 0) { setBanner(true); later(() => setBanner(false), 1600); }
         setFlashId(id);
         later(() => setFlashId((f) => (f === id ? null : f)), 520);
-        setStars((s) => s.concat({ id, x: top.x, b: bottom + STK.layerH + 6, label: 'PERFECT +' + (25 + bonus) }));
+        setStars((s) => s.concat({ id, x: top.x, b: bottom + STK.layerH + 6, label: '+' + pts + ' ×' + m }));
         later(() => setStars((s) => s.filter((q) => q.id !== id)), 950);
       } else {
         const w2 = top.w - Math.abs(dx);
         const x2 = (x + top.x) / 2;
         setStack((s) => s.concat({ id, x: x2, w: w2, t: type }));
-        setScore((v) => v + 10 + bonus);
+        /* non-perfect (slice-off) — base points, and the combo resets to ×1 */
+        setScore((v) => v + STK.base + bonus);
         setStreak(0);
         const sw = Math.abs(dx);
         const sliceLeft = dx > 0 ? top.x + top.w / 2 : top.x - top.w / 2 - sw;
@@ -350,7 +358,14 @@ function PattyStacker({ W = 360, H = 560 }) {
         <div className="stk-hud">
           <div>
             <span className="cm-label stk-hud__lab">Score</span>
-            <span className="stk-score cm-display">{score}</span>
+            <span className="stk-score cm-display">
+              {score}
+              {streak > 0 ? (
+                <span className="stk-mult" aria-label={'multiplier ' + Math.min(streak + 1, 5) + ' times'}>
+                  ×{Math.min(streak + 1, 5)}
+                </span>
+              ) : null}
+            </span>
           </div>
           <div className="stk-hud__right">
             {streak > 0 ? (
