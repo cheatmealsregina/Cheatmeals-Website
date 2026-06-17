@@ -19,21 +19,28 @@ export function Nav({ mobile, active = '' }) {
     <React.Fragment>
     <header className="pt-nav">
       <a href="/" className="pt-nav__home" aria-label="CheatMeals — Home of Indian Burgers, home">
-        {/* Brand lockup — light/dark raster pair, swapped by [data-theme] in CSS */}
-        <img
-          className="pt-logo-img pt-logo-img--light"
-          src="/assets/logos/cheatmeals-lockup-light.png"
-          alt=""
-          aria-hidden="true"
-          style={{ height: mobile ? 34 : 44 }}
-        />
-        <img
-          className="pt-logo-img pt-logo-img--dark"
-          src="/assets/logos/cheatmeals-lockup-dark.png"
-          alt=""
-          aria-hidden="true"
-          style={{ height: mobile ? 34 : 44 }}
-        />
+        {/* Brand lockup — light/dark raster pair, swapped by [data-theme] in CSS.
+            WebP with a PNG fallback; eager (above the fold). */}
+        <picture>
+          <source srcSet="/assets/logos/cheatmeals-lockup-light.webp" type="image/webp" />
+          <img
+            className="pt-logo-img pt-logo-img--light"
+            src="/assets/logos/cheatmeals-lockup-light.png"
+            alt=""
+            aria-hidden="true"
+            style={{ height: mobile ? 34 : 44 }}
+          />
+        </picture>
+        <picture>
+          <source srcSet="/assets/logos/cheatmeals-lockup-dark.webp" type="image/webp" />
+          <img
+            className="pt-logo-img pt-logo-img--dark"
+            src="/assets/logos/cheatmeals-lockup-dark.png"
+            alt=""
+            aria-hidden="true"
+            style={{ height: mobile ? 34 : 44 }}
+          />
+        </picture>
       </a>
       {!mobile ? (
         <nav className="pt-nav__links" aria-label="Primary">

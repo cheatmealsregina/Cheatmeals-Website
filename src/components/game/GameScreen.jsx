@@ -196,21 +196,27 @@ function PattyStacker({ W = 360, H = 560 }) {
        a tap drops from wherever the arm rests) and skip the rAF loop */
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) { armX.current = W / 2; setArmPos(W / 2); return; }
-    let raf, last = performance.now();
+    let raf = 0, last = performance.now();
     const amp = (W - 74) / 2;
     const spd = 0.0024 + stack.length * 0.00009;
     const tick = (t) => {
       const dt = Math.min(t - last, 50); /* clamp so a tab-refocus can't snap the arm */
       last = t;
-      if (!document.hidden) {
-        phase.current += dt * spd;
-        armX.current = W / 2 + Math.sin(phase.current) * amp;
-        setArmPos(armX.current); /* transform, not left — compositor-only, no per-frame layout */
-      }
+      phase.current += dt * spd;
+      armX.current = W / 2 + Math.sin(phase.current) * amp;
+      setArmPos(armX.current); /* transform, not left — compositor-only, no per-frame layout */
       raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    /* Pause fully when the tab is backgrounded — cancel the rAF instead of just
+       skipping work, so a hidden tab schedules zero frames (no CPU/battery).
+       Resume on return, resetting the clock so the arm doesn't snap. The effect
+       cleanup also stops it when the game route unmounts. */
+    const startLoop = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); } };
+    const stopLoop = () => { if (raf) { cancelAnimationFrame(raf); raf = 0; } };
+    const onVis = () => { if (document.hidden) stopLoop(); else startLoop(); };
+    document.addEventListener('visibilitychange', onVis);
+    if (!document.hidden) startLoop();
+    return () => { stopLoop(); document.removeEventListener('visibilitychange', onVis); };
   }, [armActive, stack.length, W]);
 
   const top = stack.length ? stack[stack.length - 1] : { x: W / 2, w: STK.baseW };

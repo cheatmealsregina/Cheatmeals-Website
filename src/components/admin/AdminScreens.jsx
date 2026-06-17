@@ -53,6 +53,21 @@ export function useAdminSession() {
   return state;
 }
 
+/* Route entry for /admin — lazy-loaded as its own chunk from App. Keeps the
+   session hook + login/editor switch together so none of the admin code (or
+   the form-heavy editor) is bundled into the public site. */
+export function AdminApp({ mobile = true }) {
+  const { loading, session } = useAdminSession();
+  if (loading) {
+    return (
+      <div className="pt-boot" role="status" aria-label="Loading">
+        <span className="pt-boot__dot" /><span className="pt-boot__dot" /><span className="pt-boot__dot" />
+      </div>
+    );
+  }
+  return session ? <AdminEditor mobile={mobile} /> : <AdminLogin mobile={mobile} />;
+}
+
 /* ============================================================ login */
 export function AdminLogin({ mobile = true }) {
   const { Input, Button } = DS;

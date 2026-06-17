@@ -4,9 +4,21 @@ import { MenuScreen } from './components/site/MenuScreen.jsx';
 import { AboutScreen } from './components/site/AboutScreen.jsx';
 import { TeamScreen } from './components/site/TeamScreen.jsx';
 import { VisitScreen } from './components/site/VisitScreen.jsx';
-import { JokesScreen } from './components/site/JokesScreen.jsx';
-import { GameScreen } from './components/game/GameScreen.jsx';
-import { AdminLogin, AdminEditor, useAdminSession } from './components/admin/AdminScreens.jsx';
+
+/* Route code-splitting: the home page (the default route, '/') ships only the
+   site screens above. The game, jokes, and admin screens — none of which the
+   home page renders — load as their own chunks the first time those routes are
+   visited (each route is a full page load, so the chunk is fetched once and
+   then cached). This keeps the home page's initial JS small. */
+const GameScreen = React.lazy(() =>
+  import('./components/game/GameScreen.jsx').then((m) => ({ default: m.GameScreen }))
+);
+const JokesScreen = React.lazy(() =>
+  import('./components/site/JokesScreen.jsx').then((m) => ({ default: m.JokesScreen }))
+);
+const AdminApp = React.lazy(() =>
+  import('./components/admin/AdminScreens.jsx').then((m) => ({ default: m.AdminApp }))
+);
 
 function useIsMobile() {
   const [mobile, setMobile] = React.useState(() => window.innerWidth < 768);
@@ -17,6 +29,16 @@ function useIsMobile() {
     return () => mq.removeEventListener('change', handler);
   }, []);
   return mobile;
+}
+
+/* Spinner shown while a lazily-loaded route chunk is in flight — matches the
+   boot loader so the hand-off is seamless. */
+function RouteFallback() {
+  return (
+    <div className="pt-boot" role="status" aria-label="Loading">
+      <span className="pt-boot__dot" /><span className="pt-boot__dot" /><span className="pt-boot__dot" />
+    </div>
+  );
 }
 
 function SitePage({ mobile }) {
@@ -31,47 +53,20 @@ function SitePage({ mobile }) {
   );
 }
 
-function GamePage({ mobile }) {
-  return (
-    <div className="game-page">
-      <GameScreen mobile={mobile} />
-    </div>
-  );
-}
-
-function JokesPage({ mobile }) {
-  return (
-    <div className="jokes-page">
-      <JokesScreen mobile={mobile} />
-    </div>
-  );
-}
-
-function AdminPage({ mobile }) {
-  /* route guard — no session means every /admin URL shows the login */
-  const { loading, session } = useAdminSession();
-  if (loading) {
-    return (
-      <div className="admin-page">
-        <div className="pt-boot" role="status" aria-label="Loading">
-          <span className="pt-boot__dot" /><span className="pt-boot__dot" /><span className="pt-boot__dot" />
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="admin-page">
-      {session ? <AdminEditor mobile={mobile} /> : <AdminLogin mobile={mobile} />}
-    </div>
-  );
-}
-
 export default function App() {
   const mobile = useIsMobile();
   const path = window.location.pathname;
 
-  if (path.startsWith('/game')) return <GamePage mobile={mobile} />;
-  if (path.startsWith('/jokes')) return <JokesPage mobile={mobile} />;
-  if (path.startsWith('/admin')) return <AdminPage mobile={mobile} />;
-  return <SitePage mobile={mobile} />;
+  /* '/' renders synchronously (no Suspense) from the statically imported site
+     screens. The other routes are lazy, wrapped in one Suspense boundary. */
+  if (!path.startsWith('/game') && !path.startsWith('/jokes') && !path.startsWith('/admin')) {
+    return <SitePage mobile={mobile} />;
+  }
+
+  let page;
+  if (path.startsWith('/game')) page = <div className="game-page"><GameScreen mobile={mobile} /></div>;
+  else if (path.startsWith('/jokes')) page = <div className="jokes-page"><JokesScreen mobile={mobile} /></div>;
+  else page = <div className="admin-page"><AdminApp mobile={mobile} /></div>;
+
+  return <React.Suspense fallback={<RouteFallback />}>{page}</React.Suspense>;
 }

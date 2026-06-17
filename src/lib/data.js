@@ -1,4 +1,8 @@
-import { supabase } from './supabase.js';
+/* Supabase is imported lazily inside the functions that actually query it (the
+   direct-query fallbacks, the jokes read, and the leaderboard direct read), so
+   the production happy path — public reads served from the CDN /api/* endpoints
+   — never pulls the ~150KB supabase-js client into the homepage bundle. It then
+   loads as its own chunk only if a fallback fires (or on /jokes and /game). */
 
 /* Live data loaders — each returns data reshaped into the exact
    structure components already consume from window.CM_DATA, so the
@@ -105,6 +109,7 @@ export function loadMenu() {
       } catch (e) { /* fall through to a direct query */ }
     }
     if (!catsData || !catsData.length || !itemsData) {
+      const { supabase } = await import('./supabase.js');
       const [cats, items] = await Promise.all([
         supabase
           .from('categories')
@@ -142,6 +147,7 @@ export function loadSiteContent() {
       try { rows = (await fetchBootstrap()).site; } catch (e) { /* fall through */ }
     }
     if (!rows) {
+      const { supabase } = await import('./supabase.js');
       const { data, error } = await supabase.from('site_content').select('key,value');
       if (error) throw error;
       rows = data;
@@ -181,6 +187,7 @@ export function loadLeaderboard() {
         }
       } catch (e) { /* fall through to a direct query */ }
     }
+    const { supabase } = await import('./supabase.js');
     const { data, error } = await supabase
       .from('leaderboard')
       .select('initials,score')
@@ -204,6 +211,7 @@ export function loadLeaderboard() {
    route-scoped Noto face handles Devanagari (see tokens/fonts-indic.css). */
 export function loadJokes() {
   return (jokesCache ??= (async () => {
+    const { supabase } = await import('./supabase.js');
     const { data, error } = await supabase
       .from('jokes')
       .select('lang,text,category')

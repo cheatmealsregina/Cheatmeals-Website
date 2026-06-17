@@ -1,5 +1,49 @@
 # Changelog
 
+## Game polish, leaderboard fairness & a performance pass (June 16, 2026)
+
+### Performance
+- **Route code-splitting** — `/game`, `/jokes`, and `/admin` now load as their
+  own lazy chunks (`React.lazy` + `Suspense`). The home page ships none of that
+  code.
+- **`@supabase/supabase-js` (~211 KB) is imported lazily** — the production
+  happy path (public reads via the CDN `/api/*` endpoints) never pulls it onto
+  the home page; it loads only on a read fallback, `/jokes`, `/game`, or
+  `/admin`.
+- **Home-page initial JS: ~435 KB → ~171 KB raw (~125 KB → ~55 KB gzip, ≈56%
+  smaller).** Largest chunks: supabase 211 KB (lazy) and the React core 151 KB;
+  all content-hashed for immutable CDN caching, no production sourcemaps.
+- Brand logos (nav lockup + About) converted to **WebP with a PNG fallback**;
+  the below-the-fold About logos are lazy-loaded (~509 KB PNG → ~208 KB WebP).
+- The Patty Stacker loop fully cancels its `requestAnimationFrame` when the tab
+  is hidden (`visibilitychange`) and on route unmount — no background CPU.
+- Confirmed: fonts are self-hosted subset woff2 with `font-display: swap`
+  (Devanagari only on `/jokes`); menu/jokes/leaderboard reads stay module-cached
+  and column-scoped; the game reads only the top 5.
+
+### Game — Patty Stacker
+- **Perfect-streak combo multiplier** — perfect drops build a multiplier
+  (×2 → ×5, capped) instead of a flat bonus: a perfect is worth
+  `base × multiplier` (20/30/40/50), any non-perfect resets it to ×1, and a live
+  `×N` indicator shows beside the score. Max ~100 pts/drop keeps an honest run
+  well under the 9999 cap.
+- **Themed art slots** wired in (a backdrop behind the playfield, plus game-over
+  and high-score illustrations) via a `ThemeAsset` component with a
+  WebP→PNG→hide fallback; the slots hide gracefully until the art is added under
+  `public/assets/game/`.
+
+### Leaderboard — one row per player
+- `20260616000000_leaderboard_unique_initials.sql` de-dupes existing rows
+  (keeping each initials' max), adds a unique constraint on `initials`, and adds
+  a `SECURITY DEFINER` `submit_score()` upsert that only ever raises a score —
+  so "no duplicates, keep the best" can't be bypassed (anon has INSERT-only
+  RLS). The API and the dev fallback both call it. Run it in the SQL editor.
+- The game-over entry card notes "Same initials? You'll share the throne." since
+  3-letter initials can collide between real people.
+
+### Site
+- Hero headline trimmed: "HOME OF *the* INDIAN BURGERS" → "HOME OF INDIAN BURGERS".
+
 ## Jokes — "While you wait" (June 13, 2026)
 
 A companion to the game: a `/jokes` page that serves one-liners while an

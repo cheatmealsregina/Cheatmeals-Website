@@ -16,16 +16,28 @@ export function AboutScreen({ mobile, showNav = true }) {
             {/* Raster brand lockup, theme-swapped: black/red ink on light, cream/red
                on dark. Both carry the same alt — only one is ever displayed
                (the other is display:none per [data-theme], so SRs skip it). */}
-            <img
-              className="pt-logo-img pt-logo-img--light pt-about__logoimg"
-              src="/assets/logos/cheatmeals-about-light.png"
-              alt="CheatMeals — Home of Indian Burgers"
-            />
-            <img
-              className="pt-logo-img pt-logo-img--dark pt-about__logoimg"
-              src="/assets/logos/cheatmeals-about-dark.png"
-              alt="CheatMeals — Home of Indian Burgers"
-            />
+            {/* WebP with a PNG fallback; lazy + async since the About section is
+                below the fold (kept off the home page's critical path). */}
+            <picture>
+              <source srcSet="/assets/logos/cheatmeals-about-light.webp" type="image/webp" />
+              <img
+                className="pt-logo-img pt-logo-img--light pt-about__logoimg"
+                src="/assets/logos/cheatmeals-about-light.png"
+                alt="CheatMeals — Home of Indian Burgers"
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
+            <picture>
+              <source srcSet="/assets/logos/cheatmeals-about-dark.webp" type="image/webp" />
+              <img
+                className="pt-logo-img pt-logo-img--dark pt-about__logoimg"
+                src="/assets/logos/cheatmeals-about-dark.png"
+                alt="CheatMeals — Home of Indian Burgers"
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
           </div>
           <SectionHeader title="OUR STORY" accent="STORY" script="this is" kicker="About" />
           <p className="pt-about__copy">{data.about.copy}</p>
