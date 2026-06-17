@@ -3,6 +3,7 @@ import { Screen } from '../shared/Screen.jsx';
 import { Nav } from '../shared/Nav.jsx';
 import { CallBar } from '../shared/CallBar.jsx';
 import { PieceSVG, ClawGlyph, SpeakerGlyph, SketchArrow } from './GamePieces.jsx';
+import { ThemeAsset } from '../shared/ThemeAsset.jsx';
 import { createGameSound } from './sound.js';
 import { loadLeaderboard } from '../../lib/data.js';
 
@@ -70,6 +71,15 @@ function GameOverCard({ score, entry = false, saved = false, onAgain, onSave, in
   return (
     <div className="stk-over">
       <div className="stk-overcard">
+        {/* themed celebration art — high-score lockup for a top-5 run, the
+            "stack collapsed" illustration otherwise. Graceful: hides itself
+            until the art files are dropped in at these paths. */}
+        <ThemeAsset
+          base={entry ? '/assets/game/highscore' : '/assets/game/gameover'}
+          className="stk-overcard__art"
+          width={132}
+          height={132}
+        />
         <span className="cm-label" style={{ color: 'var(--color-text-muted)' }}>Your stack</span>
         <p className="stk-overcard__score cm-display">{score}</p>
         {entry ? (
@@ -330,6 +340,10 @@ function PattyStacker({ W = 360, H = 560 }) {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onStage(); }
         }}
       >
+        {/* faint themed backdrop, behind every gameplay layer; pointer-events
+            none so it never steals a tap. Gameplay clarity wins — keep it low
+            opacity (see .stk-backdrop). Hides gracefully until art is added. */}
+        <ThemeAsset base="/assets/game/backdrop" className="stk-backdrop" />
         <div className="stk-hud">
           <div>
             <span className="cm-label stk-hud__lab">Score</span>
