@@ -5,20 +5,24 @@
 // How it works: serve the freshly built dist over a tiny static server, drive a
 // headless browser to each route (at a MOBILE viewport — the primary audience —
 // with live data blocked so the page renders from the bundled seed), then write
-// the serialized DOM back to dist as static HTML. The browser is local Edge on
-// dev machines and @sparticuz/chromium on Linux/Vercel. The step is NON-FATAL:
-// if no browser can be launched it logs and exits 0, leaving the normal SPA
-// shell (the build still succeeds and the site still works, just client-only).
+// the serialized DOM back to dist as static HTML.
 //
-//   /        -> dist/index.html        (the one-page site: hero + menu + about
-//                                        + team + visit — all real content)
+//   /        -> dist/index.html        (one-page site: hero + menu + about +
+//                                        team + visit — all real content)
 //   /game    -> dist/game/index.html
 //   /jokes   -> dist/jokes/index.html
 //   /admin   is intentionally NOT prerendered (owner-only, noindex).
+//
+// Browser: local Edge in dev, else @sparticuz/chromium, else full puppeteer's
+// bundled Chromium (the last two cover Linux/Vercel). The step is NON-FATAL —
+// if every strategy fails it logs, writes a status file, and exits 0, leaving
+// the SPA shell so the build (and deploy) never break. A diagnostic is written
+// to dist/_prerender-status.json (and deployed) so the outcome is inspectable
+// from production.
 import http from 'http';
-import puppeteer from 'puppeteer-core';
+import puppeteerCore from 'puppeteer-core';
 import { readFile } from 'fs/promises';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, statSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -27,32 +31,42 @@ const PORT = 4319;
 const BASE = `http://localhost:${PORT}`;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/* route -> { out: dist path, ready: selector that proves the page rendered } */
 const ROUTES = [
   { path: '/', key: 'site', out: 'index.html', ready: '#visit' },
   { path: '/game', key: 'game', out: 'game/index.html', ready: '.stk-board' },
   { path: '/jokes', key: 'jokes', out: 'jokes/index.html', ready: '.cm-joke-card__text' },
 ];
 
+const EDGE_PATHS = [
+  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+];
+
 const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.ico': 'image/x-icon',
-  '.woff2': 'font/woff2',
-  '.txt': 'text/plain; charset=utf-8',
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp',
+  '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8',
   '.xml': 'application/xml',
 };
 
-/* Serve dist with directory-index + SPA fallback (so an extension-less route
-   like /game resolves to the SPA shell — the prerendered files don't exist yet
-   while this runs). */
+const status = {
+  ok: false,
+  node: process.version,
+  platform: `${process.platform} ${process.arch}`,
+  vercel: !!process.env.VERCEL,
+  strategy: null,
+  attempts: [],
+  routes: [],
+  error: null,
+};
+function writeStatus() {
+  try {
+    if (existsSync(DIST)) writeFileSync(path.join(DIST, '_prerender-status.json'), JSON.stringify(status, null, 2));
+  } catch (e) { /* ignore */ }
+}
+
 function startServer() {
   const server = http.createServer(async (req, res) => {
     try {
@@ -61,61 +75,87 @@ function startServer() {
       let file = path.join(DIST, p);
       if (p === '/' || !path.extname(p)) file = path.join(DIST, 'index.html');
       if (!existsSync(file)) file = path.join(DIST, 'index.html');
-      const body = await readFile(file);
       res.setHeader('content-type', MIME[path.extname(file)] || 'application/octet-stream');
-      res.end(body);
-    } catch (e) {
-      res.statusCode = 500;
-      res.end('prerender server error');
-    }
+      res.end(await readFile(file));
+    } catch (e) { res.statusCode = 500; res.end('prerender server error'); }
   });
   return new Promise((resolve) => server.listen(PORT, () => resolve(server)));
 }
 
-/* Local Edge first (fast, no download); else a bundled Chromium for Linux/CI. */
-async function resolveLaunch() {
-  const envPath = process.env.PUPPETEER_EXECUTABLE_PATH;
-  if (envPath && existsSync(envPath)) {
-    return { executablePath: envPath, args: ['--no-sandbox', '--disable-setuid-sandbox'], headless: 'new' };
+/* Ordered browser strategies — first one that launches wins. */
+const STRATEGIES = [
+  {
+    name: 'local-executable',
+    async launch() {
+      const exe = (process.env.PUPPETEER_EXECUTABLE_PATH && existsSync(process.env.PUPPETEER_EXECUTABLE_PATH))
+        ? process.env.PUPPETEER_EXECUTABLE_PATH
+        : EDGE_PATHS.find((p) => existsSync(p));
+      if (!exe) throw new Error('no local Edge / PUPPETEER_EXECUTABLE_PATH');
+      return puppeteerCore.launch({ executablePath: exe, headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    },
+  },
+  {
+    name: 'sparticuz-chromium',
+    async launch() {
+      const chromium = (await import('@sparticuz/chromium')).default;
+      const executablePath = await chromium.executablePath();
+      return puppeteerCore.launch({
+        executablePath,
+        args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+        headless: chromium.headless,
+        defaultViewport: null,
+      });
+    },
+  },
+  {
+    name: 'puppeteer-bundled',
+    async launch() {
+      const pptr = (await import('puppeteer')).default;
+      return pptr.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--no-zygote'],
+      });
+    },
+  },
+];
+
+async function acquireBrowser() {
+  for (const s of STRATEGIES) {
+    try {
+      const browser = await s.launch();
+      status.attempts.push({ strategy: s.name, ok: true });
+      status.strategy = s.name;
+      return browser;
+    } catch (e) {
+      status.attempts.push({ strategy: s.name, ok: false, error: String(e && e.message || e).slice(0, 300) });
+    }
   }
-  const edge = [
-    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-  ].find((p) => existsSync(p));
-  if (edge) {
-    return { executablePath: edge, args: ['--no-sandbox', '--disable-setuid-sandbox'], headless: 'new' };
-  }
-  try {
-    const chromium = (await import('@sparticuz/chromium')).default;
-    return { executablePath: await chromium.executablePath(), args: chromium.args, headless: chromium.headless };
-  } catch (e) {
-    return null;
-  }
+  return null;
 }
 
 async function main() {
   if (!existsSync(path.join(DIST, 'index.html'))) {
-    console.warn('[prerender] dist/index.html not found — run vite build first. Skipping.');
-    return;
-  }
-
-  const launch = await resolveLaunch();
-  if (!launch) {
-    console.warn('[prerender] No browser available (no Edge, no @sparticuz/chromium). Skipping — site ships as a client-rendered SPA.');
+    status.error = 'dist/index.html not found — run vite build first';
+    console.warn('[prerender] ' + status.error + '. Skipping.');
+    writeStatus();
     return;
   }
 
   const server = await startServer();
   let browser;
-  let ok = 0;
   try {
-    browser = await puppeteer.launch({ executablePath: launch.executablePath, args: launch.args, headless: launch.headless });
+    browser = await acquireBrowser();
+    if (!browser) {
+      status.error = 'no browser strategy succeeded';
+      console.warn('[prerender] No browser could be launched. Tried: ' + status.attempts.map((a) => a.strategy).join(', ') + '. Skipping — site ships as a client-rendered SPA.');
+      return;
+    }
+    console.log('[prerender] browser via: ' + status.strategy);
+
     for (const route of ROUTES) {
       const page = await browser.newPage();
       try {
         await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-        /* Block live data so the snapshot renders from the bundled seed (the
-           agreed source for prerendered content) — never from Supabase. */
         await page.setRequestInterception(true);
         page.on('request', (r) => {
           const u = r.url();
@@ -125,13 +165,10 @@ async function main() {
 
         await page.goto(BASE + route.path, { waitUntil: 'domcontentloaded', timeout: 30000 });
         await page.waitForSelector(route.ready, { timeout: 20000 });
-        await sleep(700); // let mount effects (route head, fonts) settle
+        await sleep(700);
 
         await page.evaluate((k) => {
           document.documentElement.setAttribute('data-prerendered', k);
-          /* The DS bundle is injected by main.jsx AFTER it sets window.React;
-             leaving its <script> in the static HTML would run it too early (no
-             window.React) on the next load. main.jsx re-injects it correctly. */
           document.querySelectorAll('script[src*="_ds_bundle"]').forEach((s) => s.remove());
         }, route.key);
 
@@ -139,24 +176,29 @@ async function main() {
         const outFile = path.join(DIST, route.out);
         mkdirSync(path.dirname(outFile), { recursive: true });
         writeFileSync(outFile, html);
-        const kb = (html.length / 1024).toFixed(0);
+        const kb = +(html.length / 1024).toFixed(0);
+        status.routes.push({ path: route.path, out: route.out, kb });
         console.log(`[prerender] ${route.path.padEnd(7)} -> dist/${route.out}  (${kb} KB)`);
-        ok++;
       } catch (e) {
+        status.routes.push({ path: route.path, out: route.out, error: String(e && e.message || e).slice(0, 300) });
         console.warn(`[prerender] ${route.path} FAILED: ${e.message} — leaving the SPA shell for this route.`);
       } finally {
         await page.close();
       }
     }
+    status.ok = status.routes.filter((r) => !r.error).length === ROUTES.length;
   } finally {
     if (browser) await browser.close();
     server.close();
+    writeStatus();
   }
-  console.log(`[prerender] done — ${ok}/${ROUTES.length} routes prerendered.`);
+  const done = status.routes.filter((r) => !r.error).length;
+  console.log(`[prerender] done — ${done}/${ROUTES.length} routes prerendered (browser: ${status.strategy || 'none'}).`);
 }
 
 main().catch((e) => {
-  // Never fail the build because of prerendering — degrade to the SPA shell.
+  status.error = String(e && e.stack || e).slice(0, 600);
   console.warn('[prerender] skipped due to error:', e && e.message);
+  writeStatus();
   process.exit(0);
 });
