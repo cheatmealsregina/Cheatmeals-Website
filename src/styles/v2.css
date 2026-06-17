@@ -343,7 +343,7 @@
 }
 /* themed celebration art on the game-over / high-score card (transparent PNG/
    WebP). Fixed box so a late-loading image never shifts the card layout. */
-.stk-overcard__art { width: 132px; height: 132px; object-fit: contain; margin-bottom: calc(var(--space-2) * -1); }
+.stk-overcard__art { height: 132px; width: auto; max-width: 88%; object-fit: contain; margin-bottom: calc(var(--space-2) * -1); }
 .stk-overcard__score { margin: 0; font-size: 56px; line-height: 1; color: var(--cm-red); }
 .stk-overcard__line { margin: 0; }
 .stk-overcard__line small { color: var(--color-text-muted); }

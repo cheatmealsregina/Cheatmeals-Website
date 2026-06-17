@@ -77,8 +77,6 @@ function GameOverCard({ score, entry = false, saved = false, onAgain, onSave, in
         <ThemeAsset
           base={entry ? '/assets/game/highscore' : '/assets/game/gameover'}
           className="stk-overcard__art"
-          width={132}
-          height={132}
         />
         <span className="cm-label" style={{ color: 'var(--color-text-muted)' }}>Your stack</span>
         <p className="stk-overcard__score cm-display">{score}</p>
