@@ -1,5 +1,21 @@
 # Changelog
 
+## SEO & crawlability (June 17, 2026)
+
+- **`public/robots.txt`** — crawling open, `Disallow: /admin`, and a
+  `Sitemap:` pointer. (Previously absent: nothing was blocked, but there was no
+  sitemap reference.)
+- **`public/sitemap.xml`** — the three real indexable URLs only (`/`, `/game`,
+  `/jokes`) with absolute `https://cheatmealshoib.com` locs. Menu/About/Team/Visit
+  are anchor sections on `/` (`/#menu`, …), not separate URLs, so they are
+  intentionally not listed (a `/menu` path would 200 with a duplicate of home).
+- **Per-route `<head>` (`src/lib/routeHead.js`, wired in `App.jsx`)** — index.html
+  ships home-only metadata, so this gives `/game` and `/jokes` their own title,
+  description and **self-referencing canonical** (they previously canonicalised to
+  `/`, i.e. declared themselves duplicates of home), and marks `/admin`
+  `noindex, nofollow`. Updates the matching OG/Twitter tags too. Verified headless
+  via `_reference/verify-seo.mjs`.
+
 ## Game polish, leaderboard fairness & a performance pass (June 16, 2026)
 
 ### Performance

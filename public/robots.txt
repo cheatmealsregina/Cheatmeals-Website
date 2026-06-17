@@ -1,0 +1,7 @@
+# CheatMeals — https://cheatmealshoib.com
+# Crawling is open; only the owner editor is kept out of the index.
+User-agent: *
+Allow: /
+Disallow: /admin
+
+Sitemap: https://cheatmealshoib.com/sitemap.xml

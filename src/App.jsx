@@ -4,6 +4,7 @@ import { MenuScreen } from './components/site/MenuScreen.jsx';
 import { AboutScreen } from './components/site/AboutScreen.jsx';
 import { TeamScreen } from './components/site/TeamScreen.jsx';
 import { VisitScreen } from './components/site/VisitScreen.jsx';
+import { applyRouteHead } from './lib/routeHead.js';
 
 /* Route code-splitting: the home page (the default route, '/') ships only the
    site screens above. The game, jokes, and admin screens — none of which the
@@ -56,6 +57,10 @@ function SitePage({ mobile }) {
 export default function App() {
   const mobile = useIsMobile();
   const path = window.location.pathname;
+
+  /* Give /game, /jokes and /admin their own title/description/canonical (and
+     keep /admin out of search) — index.html's static head is home-only. */
+  React.useEffect(() => { applyRouteHead(path); }, [path]);
 
   /* '/' renders synchronously (no Suspense) from the statically imported site
      screens. The other routes are lazy, wrapped in one Suspense boundary. */
