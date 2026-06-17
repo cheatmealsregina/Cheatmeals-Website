@@ -13,12 +13,12 @@
 //   /jokes   -> dist/jokes/index.html
 //   /admin   is intentionally NOT prerendered (owner-only, noindex).
 //
-// Browser: local Edge in dev, else @sparticuz/chromium, else full puppeteer's
-// bundled Chromium (the last two cover Linux/Vercel). The step is NON-FATAL —
-// if every strategy fails it logs, writes a status file, and exits 0, leaving
-// the SPA shell so the build (and deploy) never break. A diagnostic is written
-// to dist/_prerender-status.json (and deployed) so the outcome is inspectable
-// from production.
+// Browser: local Edge (or PUPPETEER_EXECUTABLE_PATH) in dev, else
+// @sparticuz/chromium for Linux/Vercel. The step is NON-FATAL — if every
+// strategy fails it logs, writes a status file, and exits 0, leaving the SPA
+// shell so the build (and deploy) never break. A diagnostic is written to
+// dist/_prerender-status.json (and deployed) so the outcome is inspectable
+// from production at /_prerender-status.json.
 import http from 'http';
 import puppeteerCore from 'puppeteer-core';
 import { readFile } from 'fs/promises';
@@ -112,16 +112,6 @@ const STRATEGIES = [
         args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
         headless: chromium.headless,
         defaultViewport: null,
-      });
-    },
-  },
-  {
-    name: 'puppeteer-bundled',
-    async launch() {
-      const pptr = (await import('puppeteer')).default;
-      return pptr.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--single-process', '--no-zygote'],
       });
     },
   },
