@@ -97,6 +97,14 @@ const STRATEGIES = [
   {
     name: 'sparticuz-chromium',
     async launch() {
+      /* @sparticuz/chromium bundles Chromium's shared libs (libnss3, libnspr4,
+         …) in al2023.tar.br but only EXTRACTS them when it detects an AWS Lambda
+         runtime — and it always adds /tmp/al2023/lib to LD_LIBRARY_PATH. Vercel's
+         BUILD step isn't Lambda, so without this the loader can't find libnss3.so
+         (Code 127). Setting AWS_LAMBDA_JS_RUNTIME makes isRunningInAwsLambdaNode20()
+         true, so executablePath() extracts the libs into the dir already on the
+         path. Set before import so the env wiring runs with it in place. */
+      process.env.AWS_LAMBDA_JS_RUNTIME ||= 'nodejs20.x';
       const chromium = (await import('@sparticuz/chromium')).default;
       const executablePath = await chromium.executablePath();
       return puppeteerCore.launch({
