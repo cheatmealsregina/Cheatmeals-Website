@@ -15,8 +15,9 @@ create table public.categories (
 
 -- ============================================================
 -- items
--- section: optional sub-section header within a category
---          (e.g. Aloo Burgers → "DOUBLE" / "SPICY ALOO" / "ALOO").
+-- section: optional sub-section header within a category, shown verbatim as the
+--          sub-header (first word in brand red). e.g. Aloo Burgers →
+--          "Double Patty" / "Spicy Aloo" / "Aloo". Editable from the admin.
 -- price:   null renders as "N/A" (the Extra Fries joke).
 -- badges:  jsonb array matching the app shape, e.g.
 --          [{"kind":"pick","label":"Chef's Pick"},

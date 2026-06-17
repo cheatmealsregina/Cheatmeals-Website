@@ -32,18 +32,8 @@ export function VisitScreen({ mobile, showNav = true }) {
             </Button>
             <Button variant="call" size="lg" href={data.tel}>{'Call · ' + data.phone}</Button>
             <HoursTable hours={data.hours} today={data.today} />
-            <Button
-              variant="secondary"
-              icon="whatsapp"
-              href="https://wa.me/13065419198"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Join our WhatsApp foodie hub
-            </Button>
             <SocialButtons
               instagram={data.instagramUrl}
-              whatsapp="https://wa.me/13065419198"
               phone={data.phone}
             />
           </div>

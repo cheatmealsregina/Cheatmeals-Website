@@ -141,7 +141,7 @@
   top: 0;
   z-index: 20;
 }
-.pt-nav__home { display: inline-flex; color: var(--color-text); text-decoration: none; }
+.pt-nav__home { display: inline-flex; align-items: center; min-height: 44px; color: var(--color-text); text-decoration: none; }
 .pt-nav__links { display: flex; align-items: center; gap: var(--space-2); }
 .pt-nav__pennant { text-decoration: none; margin-left: var(--space-2); }
 .pt-nav__actions { display: flex; align-items: center; gap: var(--space-3); }
@@ -167,7 +167,10 @@
 .pt-hero__star { color: var(--cm-red); font-size: 0.38em; vertical-align: 0.45em; font-family: var(--font-body); letter-spacing: 0; }
 .pt-hero__sub { margin: 0; font-size: var(--text-lg); color: var(--color-text-muted); max-width: 44ch; }
 .pt-hero__ctas { display: flex; gap: var(--space-3); flex-wrap: wrap; }
-.pt-trust { color: var(--color-text-muted); display: inline-flex; align-items: center; gap: var(--space-3); }
+.pt-trust { color: var(--color-text-muted); display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--space-3); }
+/* keep each phrase whole so a narrow screen wraps BETWEEN phrases (the · stays
+   attached to the first) rather than orphaning the separator mid-column */
+.pt-trust > span { white-space: nowrap; }
 .pt-trust b { color: var(--cm-red); font-weight: 400; }
 .pt-hero__art { display: grid; justify-items: center; gap: var(--space-3); }
 
@@ -203,7 +206,7 @@
   font-size: var(--text-sm);
   line-height: 1;
   padding: var(--space-2) var(--space-4);
-  min-height: 36px;
+  min-height: 44px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   background: transparent;
@@ -374,8 +377,6 @@
   border-top: 1px solid var(--color-border);
 }
 .pt-callbar .cm-btn { width: 100%; justify-content: center; }
-/* "While you wait" pennant linking to /jokes — the mobile companion entry */
-.pt-callbar__pennant { align-self: center; text-decoration: none; line-height: 0; }
 /* call CTA reads as a tidy two-line stack: the action, then the number —
    no orphan separator leading a wrapped line */
 .pt-callbar__label {
@@ -388,21 +389,14 @@
 
 /* ---------- About ---------- */
 .pt-about__logo { display: grid; justify-items: center; }
+/* raster brand lockup (≈1.84:1); height drives size, width auto from .pt-logo-img */
+.pt-about__logoimg { height: 150px; max-width: 100%; object-fit: contain; }
+.pt-mobile .pt-about__logoimg { height: 104px; }
 .pt-about__copy {
   margin: 0 auto;
   max-width: 60ch;
   text-align: center;
   font-size: var(--text-lg);
-}
-.pt-photos {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4);
-}
-.pt-photos image-slot {
-  aspect-ratio: 4 / 3;
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-lg);
 }
 
 /* ---------- Team ---------- */
@@ -551,6 +545,57 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 .pt-rowwrap .cm-editor-row__drag { touch-action: none; cursor: grab; }
 .pt-rowwrap .cm-editor-row__drag:active { cursor: grabbing; }
 
+/* category manager — collapsible add / rename / reorder / delete above the tabs */
+.pt-catmgr { display: grid; gap: var(--space-3); }
+.pt-catmgr__toggle {
+  justify-self: start;
+  background: none;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.pt-catmgr__toggle:hover { border-color: var(--color-text-muted); color: var(--cm-red-hover); }
+.pt-catmgr__panel {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.pt-catrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.pt-catrow:last-of-type { border-bottom: none; }
+.pt-catrow__name { font-weight: 600; }
+.pt-catrow__actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; justify-content: end; }
+.pt-catrow__rename,
+.pt-sectionrename { display: grid; gap: var(--space-2); width: 100%; }
+.pt-catrow__rename .cm-field,
+.pt-sectionrename .cm-field { width: 100%; }
+.pt-sectionrename__actions { display: flex; justify-content: end; gap: var(--space-2); }
+.pt-catmgr__add {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  margin-top: var(--space-2);
+  border-top: 1.5px dashed var(--color-border);
+}
+.pt-catmgr__add .cm-field { width: 100%; }
+
+/* sub-section controls inside the item editor */
+.pt-rowgroup__newsection { display: flex; justify-content: end; }
+.pt-rowgroup__headactions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+
 /* jokes editor — reuses the menu row, but jokes have no price (hide the
    slot) and the "name" holds a full sentence, so let it wrap and ease the
    weight back from the menu's bold labels. The text span carries data-indic
@@ -597,7 +642,11 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 /* ============================================================
    Mobile (.pt-mobile) overrides
    ============================================================ */
-.pt-mobile .pt-nav { padding: var(--space-3) var(--space-4); }
+/* Small phones (≤375px) can't fit logo + 4 action icons at the default gaps —
+   the theme toggle clipped past the right edge. Tighten the padding and the
+   two gaps (icon buttons stay a full 44px) so everything fits from 360px up. */
+.pt-mobile .pt-nav { padding: var(--space-3) var(--space-3); gap: var(--space-2); }
+.pt-mobile .pt-nav__actions { gap: var(--space-2); }
 .pt-mobile .pt-hero {
   grid-template-columns: 1fr;
   padding: var(--space-8) var(--space-5) var(--space-10);
@@ -606,7 +655,6 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 .pt-mobile .pt-hero__copy { justify-items: center; }
 .pt-mobile .pt-hero__h { font-size: clamp(40px, 13vw, 56px); }
 .pt-mobile .pt-section { padding: var(--space-8) var(--space-4); }
-.pt-mobile .pt-photos { grid-template-columns: 1fr; }
 .pt-mobile .pt-visit { grid-template-columns: 1fr; }
 .pt-mobile .pt-admin-grid { grid-template-columns: 1fr; }
 .pt-mobile .pt-toolbar { align-items: stretch; flex-direction: column; }
@@ -676,6 +724,14 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 }
 /* admin's small ghost actions still clear 44px on touch */
 .pt-mobile .cm-btn--sm { min-height: 44px; }
+/* footer meta links (tel: + the Insta note) are short text links — give them a
+   full 44px tap height without enlarging the type */
+.cm-footer__meta a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
 
 /* ---- Anchor jumps: a little breathing room above a jumped-to section ----
    (no header is pinned over the lower sections — the nav is confined to the
@@ -717,17 +773,20 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
 /* Reserve call-bar space only where a fixed CallBar actually sits at the
    bottom of the scroll: the last site section (the footer) and the game page.
    Other screens no longer carry a wasted 76px gap. */
-/* ~93px tall now (the "While you wait" pennant stacks above the call button) */
-.site-page .pt-mobile:last-child { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
-.game-page .pt-mobile { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
-.jokes-page .pt-mobile { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+/* ~73px tall (single full-width call button; the "While you wait" jokes
+   shortcut now lives in the nav, so the bar no longer stacks two rows) */
+.site-page .pt-mobile:last-child { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+.game-page .pt-mobile { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+.jokes-page .pt-mobile { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .pt-themebar { bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); }
 
 /* mobile section nav — a compact horizontal-scroll row under the nav */
 .pt-nav__scroll {
   display: flex;
   align-items: center;
-  justify-content: center;
+  /* centre when the links fit; fall back to start-aligned + scrollable if they
+     ever overflow, so the first link can never be clipped past the left edge */
+  justify-content: safe center;
   gap: var(--space-2);
   overflow-x: auto;
   padding: 0 var(--space-4);
@@ -744,7 +803,8 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
   white-space: nowrap;
 }
 
-/* compact game shortcut in the mobile nav action row */
+/* compact jokes + game shortcuts in the mobile nav action row */
+.pt-nav__jokes,
 .pt-nav__game {
   width: 44px;
   height: 44px;
@@ -758,5 +818,7 @@ a.pt-visit__map:hover { border-color: var(--cm-red-hover); }
   flex: none;
   transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
+.pt-nav__jokes:hover,
 .pt-nav__game:hover { border-color: var(--color-text-muted); color: var(--cm-red-hover); }
+.pt-nav__jokes:active,
 .pt-nav__game:active { transform: scale(0.96); }

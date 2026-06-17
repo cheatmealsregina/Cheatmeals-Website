@@ -30,19 +30,19 @@ insert into public.items (category_id, section, name, description, price, badges
 select c.id, v.section, v.name, v.description, v.price, v.badges::jsonb, v.sort_order
 from public.categories c
 join (values
-  ('DOUBLE', 'The Red Hulk', 'Double aloo patty, double cheese, schezwan chutney and mayo, cilantro, onions and jalapenos', 14.99, '[{"kind":"pick","label":"Chef''s Pick"},{"kind":"spicy","level":1,"label":"Spicy"}]', 1),
-  ('SPICY ALOO', 'Aloo Anarkali', 'Spicy potato patty, cilantro, crispy onions, sriracha drizzle, roasted garlic, mayo, jalapenos, pickled onions and marble cheese', 12.99, '[{"kind":"pick","label":"Chef''s Pick"},{"kind":"spicy","level":1,"label":"Spicy"}]', 2),
-  ('SPICY ALOO', 'Aloo 420', 'Saucy affair of schezwan and garlic mayo, cilantro, minty and spicy aloo patty, onions, jalapenos, marble cheese', 11.99, '[]', 3),
-  ('SPICY ALOO', 'Amdavadi Chaska 2.0', 'Spicy aloo patty, caramalised onion masala, hint of pickled onions, signature burger sauce, marble cheese', 11.99, '[]', 4),
-  ('SPICY ALOO', 'Masala Aloo Tikki', 'Spicy aloo patty, signature burger sauce, pickled onions, cilantro, marble cheese', 10.99, '[{"kind":"spicy","level":1,"label":"Spicy"}]', 5),
-  ('SPICY ALOO', 'Achari Aloo', 'Spicy aloo patty, cilantro, pickled onions, crispy chips, mint mayo, marble cheese', 9.99, '[]', 6),
-  ('ALOO', 'Red Devil', 'Aloo patty, schezwan chutney with sriracha, schezwan mayo, jalapenos, onions, cilantro, crispy onions, marble cheese', 12.99, '[{"kind":"spicy","level":2,"label":"Extra Spicy"}]', 7),
-  ('ALOO', 'Veggie Delight', 'Aloo patty, cilantro, jalapenos, pickled onions, olives, available veggies, signature burger sauce and marble cheese', 11.99, '[]', 8),
-  ('ALOO', 'Schezwan Aloo Tikki', 'Aloo patty, pickled onions, jalapenos, marble cheese, schezwan mayo', 10.99, '[{"kind":"pick","label":"Chef''s Pick"},{"kind":"spicy","level":1,"label":"Spicy"}]', 9),
-  ('ALOO', 'Aloo Makhni', 'Aloo patty, onions, cilantro, cream, makhni gravy, crispy onions, green peppers, marble cheese', 10.99, '[]', 10),
-  ('ALOO', 'Amdavadi Chaska', 'Aloo patty, caramalised onion masala, hint of pickled onions, mint mayo, marble cheese', 10.99, '[{"kind":"pick","label":"Chef''s Pick"}]', 11),
-  ('ALOO', 'Peri-Peri', 'Aloo patty, cilantro, jalapenos, pickled onions, olives, peri peri masala, peri peri mayo, marble cheese', 10.99, '[]', 12),
-  ('ALOO', 'Aloo Tikki', 'Aloo patty, signature burger sauce, pickled onions, cilantro, marble cheese', 9.99, '[]', 13)
+  ('Double Patty', 'The Red Hulk', 'Double aloo patty, double cheese, schezwan chutney and mayo, cilantro, onions and jalapenos', 14.99, '[{"kind":"pick","label":"Chef''s Pick"},{"kind":"spicy","level":1,"label":"Spicy"}]', 1),
+  ('Spicy Aloo', 'Aloo Anarkali', 'Spicy potato patty, cilantro, crispy onions, sriracha drizzle, roasted garlic, mayo, jalapenos, pickled onions and marble cheese', 12.99, '[{"kind":"pick","label":"Chef''s Pick"},{"kind":"spicy","level":1,"label":"Spicy"}]', 2),
+  ('Spicy Aloo', 'Aloo 420', 'Saucy affair of schezwan and garlic mayo, cilantro, minty and spicy aloo patty, onions, jalapenos, marble cheese', 11.99, '[]', 3),
+  ('Spicy Aloo', 'Amdavadi Chaska 2.0', 'Spicy aloo patty, caramalised onion masala, hint of pickled onions, signature burger sauce, marble cheese', 11.99, '[]', 4),
+  ('Spicy Aloo', 'Masala Aloo Tikki', 'Spicy aloo patty, signature burger sauce, pickled onions, cilantro, marble cheese', 10.99, '[{"kind":"spicy","level":1,"label":"Spicy"}]', 5),
+  ('Spicy Aloo', 'Achari Aloo', 'Spicy aloo patty, cilantro, pickled onions, crispy chips, mint mayo, marble cheese', 9.99, '[]', 6),
+  ('Aloo', 'Red Devil', 'Aloo patty, schezwan chutney with sriracha, schezwan mayo, jalapenos, onions, cilantro, crispy onions, marble cheese', 12.99, '[{"kind":"spicy","level":2,"label":"Extra Spicy"}]', 7),
+  ('Aloo', 'Veggie Delight', 'Aloo patty, cilantro, jalapenos, pickled onions, olives, available veggies, signature burger sauce and marble cheese', 11.99, '[]', 8),
+  ('Aloo', 'Schezwan Aloo Tikki', 'Aloo patty, pickled onions, jalapenos, marble cheese, schezwan mayo', 10.99, '[{"kind":"pick","label":"Chef''s Pick"},{"kind":"spicy","level":1,"label":"Spicy"}]', 9),
+  ('Aloo', 'Aloo Makhni', 'Aloo patty, onions, cilantro, cream, makhni gravy, crispy onions, green peppers, marble cheese', 10.99, '[]', 10),
+  ('Aloo', 'Amdavadi Chaska', 'Aloo patty, caramalised onion masala, hint of pickled onions, mint mayo, marble cheese', 10.99, '[{"kind":"pick","label":"Chef''s Pick"}]', 11),
+  ('Aloo', 'Peri-Peri', 'Aloo patty, cilantro, jalapenos, pickled onions, olives, peri peri masala, peri peri mayo, marble cheese', 10.99, '[]', 12),
+  ('Aloo', 'Aloo Tikki', 'Aloo patty, signature burger sauce, pickled onions, cilantro, marble cheese', 9.99, '[]', 13)
 ) as v(section, name, description, price, badges, sort_order) on true
 where c.slug = 'aloo-burgers'
 on conflict (category_id, name) do update set
@@ -57,14 +57,14 @@ insert into public.items (category_id, section, name, description, price, badges
 select c.id, v.section, v.name, v.description, v.price, v.badges::jsonb, v.sort_order
 from public.categories c
 join (values
-  ('DOUBLE', 'King Kong Paneer', 'Double paneer patties tossed in chilli sauce, crispy onions and cilantro, marble cheese, schezwan mayo, jalapenos, pickled onions', 14.99, '[{"kind":"pick","label":"Chef''s Pick"}]', 1),
-  ('PANEER', 'Hong Kong Paneer', 'Paneer patty tossed in chilli sauce, crispy onions and cilantro, marble cheese, schezwan mayo, jalapenos, pickled onions', 12.99, '[]', 2),
-  ('PANEER', 'Flame Thrower Paneer', 'Crispy paneer patty, schezwan chutney with sriracha, schezwan mayo, jalapenos, onions, cilantro, crispy onions, marble cheese', 12.99, '[{"kind":"pick","label":"Chef''s Pick"},{"kind":"spicy","level":1,"label":"Spicy"}]', 3),
-  ('PANEER', 'Paneer Pataka', 'Crispy paneer patty, cilantro, crispy onions, sriracha drizzle, roasted garlic mayo, jalapenos, pickled onions, marble cheese', 12.99, '[{"kind":"pick","label":"Chef''s Pick"}]', 4),
-  ('PANEER', 'Paneer Chaska', 'Crispy paneer patty, caramalised onion masala, hint of pickled onions, mint mayo, marble cheese', 12.99, '[]', 5),
-  ('PANEER', 'Veggie Paneer Delight', 'Crispy paneer patty, cilantro, jalapenos, pickled onions, olives, available veggies, signature burger sauce, marble cheese', 12.99, '[]', 6),
-  ('PANEER', 'Paneer Makhni', 'Crispy paneer patty, onions, cilantro, cream, makhni gravy, crispy onions, green peppers, marble cheese', 11.99, '[]', 7),
-  ('PANEER', 'Crispy Schezwan', 'Crispy paneer patty, pickled onions, jalapenos, marble cheese, schezwan mayo', 11.99, '[{"kind":"spicy","level":1,"label":"Spicy"}]', 8)
+  ('Double Patty', 'King Kong Paneer', 'Double paneer patties tossed in chilli sauce, crispy onions and cilantro, marble cheese, schezwan mayo, jalapenos, pickled onions', 14.99, '[{"kind":"pick","label":"Chef''s Pick"}]', 1),
+  ('Paneer', 'Hong Kong Paneer', 'Paneer patty tossed in chilli sauce, crispy onions and cilantro, marble cheese, schezwan mayo, jalapenos, pickled onions', 12.99, '[]', 2),
+  ('Paneer', 'Flame Thrower Paneer', 'Crispy paneer patty, schezwan chutney with sriracha, schezwan mayo, jalapenos, onions, cilantro, crispy onions, marble cheese', 12.99, '[{"kind":"pick","label":"Chef''s Pick"},{"kind":"spicy","level":1,"label":"Spicy"}]', 3),
+  ('Paneer', 'Paneer Pataka', 'Crispy paneer patty, cilantro, crispy onions, sriracha drizzle, roasted garlic mayo, jalapenos, pickled onions, marble cheese', 12.99, '[{"kind":"pick","label":"Chef''s Pick"}]', 4),
+  ('Paneer', 'Paneer Chaska', 'Crispy paneer patty, caramalised onion masala, hint of pickled onions, mint mayo, marble cheese', 12.99, '[]', 5),
+  ('Paneer', 'Veggie Paneer Delight', 'Crispy paneer patty, cilantro, jalapenos, pickled onions, olives, available veggies, signature burger sauce, marble cheese', 12.99, '[]', 6),
+  ('Paneer', 'Paneer Makhni', 'Crispy paneer patty, onions, cilantro, cream, makhni gravy, crispy onions, green peppers, marble cheese', 11.99, '[]', 7),
+  ('Paneer', 'Crispy Schezwan', 'Crispy paneer patty, pickled onions, jalapenos, marble cheese, schezwan mayo', 11.99, '[{"kind":"spicy","level":1,"label":"Spicy"}]', 8)
 ) as v(section, name, description, price, badges, sort_order) on true
 where c.slug = 'paneer-burgers'
 on conflict (category_id, name) do update set
@@ -287,7 +287,6 @@ insert into public.site_content (key, value) values
   ('address',      '"4306 Dewdney Avenue"'),
   ('city',         '"Regina, SK"'),
   ('instagram',    '{"handle": "@cheatmeals_yqr", "url": "https://instagram.com/cheatmeals_yqr"}'),
-  ('whatsapp',     '{"label": "Join our WhatsApp foodie hub", "url": "https://wa.me/13065419198"}'),
   ('about', '{
     "headline": ["OUR", "STORY"],
     "copy": "CheatMeals started with one belief: Regina deserved the burgers we grew up craving. Hand-smashed aloo tikkis, real paneer, sauces we won''t explain — now at 4306 Dewdney Avenue."

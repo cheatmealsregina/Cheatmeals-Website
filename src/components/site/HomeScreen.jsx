@@ -25,7 +25,9 @@ export function HomeScreen({ mobile }) {
             <Button variant="secondary" size="lg" href={data.tel} icon="phone">Call to Order</Button>
           </div>
           <span className="pt-trust cm-label">
-            We make our own patties <b>·</b> Every burger comes with a side.
+            <span>We make our own patties</span>
+            <b aria-hidden="true">·</b>
+            <span>Every burger comes with a side.</span>
           </span>
         </div>
         <div className="pt-hero__art">

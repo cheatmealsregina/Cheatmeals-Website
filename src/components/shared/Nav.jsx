@@ -61,6 +61,15 @@ export function Nav({ mobile, active = '' }) {
           <Icon name="instagram" size={20} />
         </a>
         {mobile ? (
+          <a className="pt-nav__jokes" href="/jokes" aria-label="Jokes — while you wait">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+              <path d="M9 9h.01 M15 9h.01" />
+            </svg>
+          </a>
+        ) : null}
+        {mobile ? (
           <a className="pt-nav__game" href="/game" aria-label="Play the burger stacker while you wait">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <rect x="2" y="6" width="20" height="12" rx="4" />

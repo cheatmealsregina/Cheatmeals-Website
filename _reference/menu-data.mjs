@@ -38,34 +38,34 @@ export const REMOVE = [
   { slug: 'jain', names: ['Jain Paneer Burger', 'Jain Pav', 'Jain Cheese Frankie'] },
 ];
 
-// Items per category slug. `section` only set for the sectioned burger
-// categories (the menu UI appends " PATTY" to section titles); every other
-// category is a flat list (section null).
+// Items per category slug. `section` is the full sub-section display name for
+// the sectioned burger categories (rendered verbatim, first word in brand red);
+// every other category is a flat list (section null).
 export const MENU = {
   'aloo-burgers': [
-    { section: 'DOUBLE', name: 'The Red Hulk', price: 14.99, badges: [pick, spicy1], description: 'Double aloo patty, double cheese, schezwan chutney and mayo, cilantro, onions and jalapenos' },
-    { section: 'SPICY ALOO', name: 'Aloo Anarkali', price: 12.99, badges: [pick, spicy1], description: 'Spicy potato patty, cilantro, crispy onions, sriracha drizzle, roasted garlic, mayo, jalapenos, pickled onions and marble cheese' },
-    { section: 'SPICY ALOO', name: 'Aloo 420', price: 11.99, badges: [], description: 'Saucy affair of schezwan and garlic mayo, cilantro, minty and spicy aloo patty, onions, jalapenos, marble cheese' },
-    { section: 'SPICY ALOO', name: 'Amdavadi Chaska 2.0', price: 11.99, badges: [], description: 'Spicy aloo patty, caramalised onion masala, hint of pickled onions, signature burger sauce, marble cheese' },
-    { section: 'SPICY ALOO', name: 'Masala Aloo Tikki', price: 10.99, badges: [spicy1], description: 'Spicy aloo patty, signature burger sauce, pickled onions, cilantro, marble cheese' },
-    { section: 'SPICY ALOO', name: 'Achari Aloo', price: 9.99, badges: [], description: 'Spicy aloo patty, cilantro, pickled onions, crispy chips, mint mayo, marble cheese' },
-    { section: 'ALOO', name: 'Red Devil', price: 12.99, badges: [spicy2], description: 'Aloo patty, schezwan chutney with sriracha, schezwan mayo, jalapenos, onions, cilantro, crispy onions, marble cheese' },
-    { section: 'ALOO', name: 'Veggie Delight', price: 11.99, badges: [], description: 'Aloo patty, cilantro, jalapenos, pickled onions, olives, available veggies, signature burger sauce and marble cheese' },
-    { section: 'ALOO', name: 'Schezwan Aloo Tikki', price: 10.99, badges: [pick, spicy1], description: 'Aloo patty, pickled onions, jalapenos, marble cheese, schezwan mayo' },
-    { section: 'ALOO', name: 'Aloo Makhni', price: 10.99, badges: [], description: 'Aloo patty, onions, cilantro, cream, makhni gravy, crispy onions, green peppers, marble cheese' },
-    { section: 'ALOO', name: 'Amdavadi Chaska', price: 10.99, badges: [pick], description: 'Aloo patty, caramalised onion masala, hint of pickled onions, mint mayo, marble cheese' },
-    { section: 'ALOO', name: 'Peri-Peri', price: 10.99, badges: [], description: 'Aloo patty, cilantro, jalapenos, pickled onions, olives, peri peri masala, peri peri mayo, marble cheese' },
-    { section: 'ALOO', name: 'Aloo Tikki', price: 9.99, badges: [], description: 'Aloo patty, signature burger sauce, pickled onions, cilantro, marble cheese' },
+    { section: 'Double Patty', name: 'The Red Hulk', price: 14.99, badges: [pick, spicy1], description: 'Double aloo patty, double cheese, schezwan chutney and mayo, cilantro, onions and jalapenos' },
+    { section: 'Spicy Aloo', name: 'Aloo Anarkali', price: 12.99, badges: [pick, spicy1], description: 'Spicy potato patty, cilantro, crispy onions, sriracha drizzle, roasted garlic, mayo, jalapenos, pickled onions and marble cheese' },
+    { section: 'Spicy Aloo', name: 'Aloo 420', price: 11.99, badges: [], description: 'Saucy affair of schezwan and garlic mayo, cilantro, minty and spicy aloo patty, onions, jalapenos, marble cheese' },
+    { section: 'Spicy Aloo', name: 'Amdavadi Chaska 2.0', price: 11.99, badges: [], description: 'Spicy aloo patty, caramalised onion masala, hint of pickled onions, signature burger sauce, marble cheese' },
+    { section: 'Spicy Aloo', name: 'Masala Aloo Tikki', price: 10.99, badges: [spicy1], description: 'Spicy aloo patty, signature burger sauce, pickled onions, cilantro, marble cheese' },
+    { section: 'Spicy Aloo', name: 'Achari Aloo', price: 9.99, badges: [], description: 'Spicy aloo patty, cilantro, pickled onions, crispy chips, mint mayo, marble cheese' },
+    { section: 'Aloo', name: 'Red Devil', price: 12.99, badges: [spicy2], description: 'Aloo patty, schezwan chutney with sriracha, schezwan mayo, jalapenos, onions, cilantro, crispy onions, marble cheese' },
+    { section: 'Aloo', name: 'Veggie Delight', price: 11.99, badges: [], description: 'Aloo patty, cilantro, jalapenos, pickled onions, olives, available veggies, signature burger sauce and marble cheese' },
+    { section: 'Aloo', name: 'Schezwan Aloo Tikki', price: 10.99, badges: [pick, spicy1], description: 'Aloo patty, pickled onions, jalapenos, marble cheese, schezwan mayo' },
+    { section: 'Aloo', name: 'Aloo Makhni', price: 10.99, badges: [], description: 'Aloo patty, onions, cilantro, cream, makhni gravy, crispy onions, green peppers, marble cheese' },
+    { section: 'Aloo', name: 'Amdavadi Chaska', price: 10.99, badges: [pick], description: 'Aloo patty, caramalised onion masala, hint of pickled onions, mint mayo, marble cheese' },
+    { section: 'Aloo', name: 'Peri-Peri', price: 10.99, badges: [], description: 'Aloo patty, cilantro, jalapenos, pickled onions, olives, peri peri masala, peri peri mayo, marble cheese' },
+    { section: 'Aloo', name: 'Aloo Tikki', price: 9.99, badges: [], description: 'Aloo patty, signature burger sauce, pickled onions, cilantro, marble cheese' },
   ],
   'paneer-burgers': [
-    { section: 'DOUBLE', name: 'King Kong Paneer', price: 14.99, badges: [pick], description: 'Double paneer patties tossed in chilli sauce, crispy onions and cilantro, marble cheese, schezwan mayo, jalapenos, pickled onions' },
-    { section: 'PANEER', name: 'Hong Kong Paneer', price: 12.99, badges: [], description: 'Paneer patty tossed in chilli sauce, crispy onions and cilantro, marble cheese, schezwan mayo, jalapenos, pickled onions' },
-    { section: 'PANEER', name: 'Flame Thrower Paneer', price: 12.99, badges: [pick, spicy1], description: 'Crispy paneer patty, schezwan chutney with sriracha, schezwan mayo, jalapenos, onions, cilantro, crispy onions, marble cheese' },
-    { section: 'PANEER', name: 'Paneer Pataka', price: 12.99, badges: [pick], description: 'Crispy paneer patty, cilantro, crispy onions, sriracha drizzle, roasted garlic mayo, jalapenos, pickled onions, marble cheese' },
-    { section: 'PANEER', name: 'Paneer Chaska', price: 12.99, badges: [], description: 'Crispy paneer patty, caramalised onion masala, hint of pickled onions, mint mayo, marble cheese' },
-    { section: 'PANEER', name: 'Veggie Paneer Delight', price: 12.99, badges: [], description: 'Crispy paneer patty, cilantro, jalapenos, pickled onions, olives, available veggies, signature burger sauce, marble cheese' },
-    { section: 'PANEER', name: 'Paneer Makhni', price: 11.99, badges: [], description: 'Crispy paneer patty, onions, cilantro, cream, makhni gravy, crispy onions, green peppers, marble cheese' },
-    { section: 'PANEER', name: 'Crispy Schezwan', price: 11.99, badges: [spicy1], description: 'Crispy paneer patty, pickled onions, jalapenos, marble cheese, schezwan mayo' },
+    { section: 'Double Patty', name: 'King Kong Paneer', price: 14.99, badges: [pick], description: 'Double paneer patties tossed in chilli sauce, crispy onions and cilantro, marble cheese, schezwan mayo, jalapenos, pickled onions' },
+    { section: 'Paneer', name: 'Hong Kong Paneer', price: 12.99, badges: [], description: 'Paneer patty tossed in chilli sauce, crispy onions and cilantro, marble cheese, schezwan mayo, jalapenos, pickled onions' },
+    { section: 'Paneer', name: 'Flame Thrower Paneer', price: 12.99, badges: [pick, spicy1], description: 'Crispy paneer patty, schezwan chutney with sriracha, schezwan mayo, jalapenos, onions, cilantro, crispy onions, marble cheese' },
+    { section: 'Paneer', name: 'Paneer Pataka', price: 12.99, badges: [pick], description: 'Crispy paneer patty, cilantro, crispy onions, sriracha drizzle, roasted garlic mayo, jalapenos, pickled onions, marble cheese' },
+    { section: 'Paneer', name: 'Paneer Chaska', price: 12.99, badges: [], description: 'Crispy paneer patty, caramalised onion masala, hint of pickled onions, mint mayo, marble cheese' },
+    { section: 'Paneer', name: 'Veggie Paneer Delight', price: 12.99, badges: [], description: 'Crispy paneer patty, cilantro, jalapenos, pickled onions, olives, available veggies, signature burger sauce, marble cheese' },
+    { section: 'Paneer', name: 'Paneer Makhni', price: 11.99, badges: [], description: 'Crispy paneer patty, onions, cilantro, cream, makhni gravy, crispy onions, green peppers, marble cheese' },
+    { section: 'Paneer', name: 'Crispy Schezwan', price: 11.99, badges: [spicy1], description: 'Crispy paneer patty, pickled onions, jalapenos, marble cheese, schezwan mayo' },
   ],
   frankies: [
     { name: 'Chilli Paneer Frankie', price: 12.99, badges: [pick], description: 'Classic indo-chinese paneer chilli in a wrap' },

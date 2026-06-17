@@ -26,13 +26,13 @@
         note: "We make our own patties. All burgers are served with a side of fries, chips, Doritos, or Cheetos.",
         sections: [
           {
-            title: "DOUBLE", accent: "DOUBLE", script: "Patty",
+            title: "Double Patty", accent: "Double",
             items: [
               { name: "The Red Hulk", price: 14.99, description: "Double aloo patty, double cheese, schezwan chutney and mayo, cilantro, onions and jalapenos", badges: [pick, spicy1] },
             ],
           },
           {
-            title: "SPICY ALOO", accent: "ALOO", script: "Patty",
+            title: "Spicy Aloo", accent: "Spicy",
             items: [
               { name: "Aloo Anarkali", price: 12.99, badges: [pick, spicy1] },
               { name: "Aloo 420", price: 11.99, badges: [] },
@@ -42,7 +42,7 @@
             ],
           },
           {
-            title: "ALOO", accent: "ALOO", script: "Patty",
+            title: "Aloo", accent: "Aloo",
             items: [
               { name: "Red Devil", price: 12.99, badges: [spicy2] },
               { name: "Veggie Delight", price: 11.99, description: "Please don't ask, it is what the name says", badges: [] },

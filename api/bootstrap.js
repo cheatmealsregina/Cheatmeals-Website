@@ -30,8 +30,8 @@ let inflight = null; // shared promise while one read is in progress
 async function readUpstream(url, key) {
   const auth = { apikey: key, authorization: `Bearer ${key}` };
   const [cats, items, site] = await Promise.all([
-    fetch(`${url}/rest/v1/categories?select=id,name,note,is_dietary&order=sort_order`, { headers: auth }),
-    fetch(`${url}/rest/v1/items?select=category_id,section,name,description,price,badges,photo_url&is_available=eq.true&order=sort_order`, { headers: auth }),
+    fetch(`${url}/rest/v1/categories?select=id,name,note,is_dietary&order=sort_order,id`, { headers: auth }),
+    fetch(`${url}/rest/v1/items?select=category_id,section,name,description,price,badges,photo_url&is_available=eq.true&order=sort_order,id`, { headers: auth }),
     fetch(`${url}/rest/v1/site_content?select=key,value`, { headers: auth }),
   ]);
   if (!cats.ok || !items.ok || !site.ok) throw new Error('upstream status');

@@ -58,7 +58,6 @@ insert into public.site_content (key, value) values
   ('address',      '"4306 Dewdney Avenue"'),
   ('city',         '"Regina, SK"'),
   ('instagram',    '{"handle": "@cheatmeals_yqr", "url": "https://instagram.com/cheatmeals_yqr"}'),
-  ('whatsapp',     '{"label": "Join our WhatsApp foodie hub", "url": "https://wa.me/13065419198"}'),
   ('about', '{
     "headline": ["OUR", "STORY"],
     "copy": "CheatMeals started with one belief: Regina deserved the burgers we grew up craving. Hand-smashed aloo tikkis, real paneer, sauces we won''t explain — now at 4306 Dewdney Avenue."

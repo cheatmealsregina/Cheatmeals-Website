@@ -41,24 +41,23 @@ function reshapeMenu(cats, items) {
 
     if (rows.some((i) => i.section)) {
       /* sectioned category (e.g. Aloo Burgers) — sections derive from the
-         items' section field in first-appearance order; accent/script come
-         from the bundled presentation data when the title matches. */
+         items' section field in first-appearance order. The section name is the
+         full sub-header text (e.g. "Double Patty"); its first word renders in
+         the brand red (CSS uppercases the title). No hardcoded suffix or script
+         lead-in, so the owner can name sub-sections anything from the admin. */
       const byTitle = new Map();
       for (const i of rows) {
-        const title = i.section || '';
+        /* trim so stray whitespace from any data source can't split a group or
+           blank the first-word accent */
+        const title = (i.section || '').trim();
         if (!byTitle.has(title)) byTitle.set(title, []);
         byTitle.get(title).push(mapItem(i));
       }
-      const bundledSections = bundledMenu.sections || [];
-      const sections = [...byTitle.entries()].map(([title, its]) => {
-        const b = bundledSections.find((s) => s.title === title) || {};
-        return {
-          title,
-          accent: b.accent || title.split(' ').pop(),
-          script: b.script || 'Patty',
-          items: its,
-        };
-      });
+      const sections = [...byTitle.entries()].map(([title, its]) => ({
+        title,
+        accent: title.split(' ')[0],
+        items: its,
+      }));
       menus[c.name] = { note: c.note || undefined, sections };
     } else if (c.is_dietary) {
       /* dietary tab — note is the tagline ("No root vegetables…") */
@@ -110,12 +109,14 @@ export function loadMenu() {
         supabase
           .from('categories')
           .select('id,name,note,is_dietary')
-          .order('sort_order'),
+          .order('sort_order')
+          .order('id'),
         supabase
           .from('items')
           .select('category_id,section,name,description,price,badges,photo_url')
           .eq('is_available', true)
-          .order('sort_order'),
+          .order('sort_order')
+          .order('id'),
       ]);
       if (cats.error) throw cats.error;
       if (items.error) throw items.error;

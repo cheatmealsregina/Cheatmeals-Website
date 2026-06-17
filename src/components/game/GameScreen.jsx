@@ -453,8 +453,27 @@ function useStageWidth(mobile) {
   return w;
 }
 
+/* On mobile a fixed-bottom CallBar covers the lower ~84px of the viewport, and
+   the page chrome above the stage (nav + section row + title) is ~340px. A flat
+   540px stage therefore had its base hidden behind the call bar. Size the stage
+   to the room that's actually left (viewport − chrome − call bar) so the whole
+   playfield sits clear of the bar; clamp so it never gets tiny or larger than
+   the original. The physics read H, so a shorter stage just scrolls sooner. */
+function useStageHeight(mobile) {
+  const calc = () => (mobile ? Math.max(340, Math.min(540, window.innerHeight - 424)) : 560);
+  const [h, setH] = React.useState(calc);
+  React.useEffect(() => {
+    const onResize = () => setH(calc());
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [mobile]);
+  return h;
+}
+
 export function GameScreen({ mobile }) {
   const W = useStageWidth(mobile);
+  const H = useStageHeight(mobile);
   return (
     <Screen mobile={mobile} label={mobile ? 'While You Wait — mobile' : 'While You Wait — desktop'}>
       <Nav mobile={mobile} active="" />
@@ -466,7 +485,7 @@ export function GameScreen({ mobile }) {
           </h1>
           <p className="stk-sub">Stack 'em while we smash 'em. Your order's coming.</p>
         </header>
-        <PattyStacker W={W} H={mobile ? 540 : 560} />
+        <PattyStacker W={W} H={H} />
       </main>
       {mobile ? <CallBar /> : null}
     </Screen>

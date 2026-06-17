@@ -171,6 +171,54 @@ async function dbUpdateCategoryNote(id, note) {
   if (!data || !data.length) throw new Error('No row updated — are you signed in?');
 }
 
+/* categories.slug is NOT NULL, unique, and must match ^[a-z0-9-]+$ — derive it
+   from the name so the owner never has to think about it. */
+function slugify(name) {
+  return String(name)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+async function dbInsertCategory(values) {
+  const sb = await getSupabase();
+  const { data, error } = await sb.from('categories').insert(values).select();
+  if (error) throw error;
+  if (!data || !data.length) throw new Error('No category added — are you signed in?');
+  return data[0];
+}
+
+async function dbUpdateCategory(id, patch) {
+  const sb = await getSupabase();
+  const { data, error } = await sb.from('categories').update(patch).eq('id', id).select();
+  if (error) throw error;
+  if (!data || !data.length) throw new Error('No category saved — are you signed in?');
+  return data[0];
+}
+
+async function dbDeleteCategory(id) {
+  const sb = await getSupabase();
+  const { data, error } = await sb.from('categories').delete().eq('id', id).select();
+  if (error) throw error;
+  if (!data || !data.length) throw new Error('No category deleted — are you signed in?');
+}
+
+/* rename a sub-section: rewrite the section label on every item in this category
+   that carries the old label. Returns the rows touched so the caller can patch
+   local state. Only named sub-sections are renamable from the UI. */
+async function dbRenameSection(categoryId, oldSection, newSection) {
+  const sb = await getSupabase();
+  const { data, error } = await sb
+    .from('items')
+    .update({ section: newSection })
+    .eq('category_id', categoryId)
+    .eq('section', oldSection)
+    .select();
+  if (error) throw error;
+  return data || [];
+}
+
 async function dbUpsertSiteContent(key, value) {
   const sb = await getSupabase();
   const { data, error } = await sb.from('site_content').upsert({ key, value }).select();
@@ -243,11 +291,13 @@ function useToast() {
 }
 
 /* ============================================================ edit card */
-function EditCard({ item, section, categoryId, nextSort, onDone, onDeleted, onPatched, saved, errorToast }) {
+function EditCard({ item, section, categoryId, nextSort, existingSections = [], requireSection = false, onDone, onDeleted, onPatched, saved, errorToast }) {
   const { Input, Textarea, PriceInput, Toggle, Dropzone, Button, Badge, Modal } = DS;
   const isNew = !item;
+  const sectionListId = React.useId();
   const [name, setName] = React.useState(item ? item.name : '');
   const [desc, setDesc] = React.useState((item && item.description) || '');
+  const [sectionVal, setSectionVal] = React.useState(item ? (item.section || '') : (section || ''));
   const [price, setPrice] = React.useState(item ? item.price : null);
   const [badges, setBadges] = React.useState(badgesToState(item && item.badges));
   const [avail, setAvail] = React.useState(item ? item.is_available : true);
@@ -306,10 +356,15 @@ function EditCard({ item, section, categoryId, nextSort, onDone, onDeleted, onPa
       errorToast('Name the burger first.');
       return;
     }
+    if (requireSection && !sectionVal.trim()) {
+      errorToast('Name the sub-section first.');
+      return;
+    }
     setBusy(true);
     const patch = {
       name: name.trim(),
       description: desc.trim() || null,
+      section: sectionVal.trim() || null,
       price: priceVal,
       badges: stateToBadges(badges),
       is_available: avail,
@@ -319,7 +374,6 @@ function EditCard({ item, section, categoryId, nextSort, onDone, onDeleted, onPa
         const row = await dbInsertItem({
           ...patch,
           category_id: categoryId,
-          section: section || null,
           photo_url: photoUrl,
           sort_order: nextSort,
         });
@@ -361,6 +415,18 @@ function EditCard({ item, section, categoryId, nextSort, onDone, onDeleted, onPa
         onChange={(e) => setDesc(e.target.value)}
         placeholder="Optional — or let the name do the talking"
       />
+      <Input
+        label="Sub-section"
+        value={sectionVal}
+        onChange={(e) => setSectionVal(e.target.value)}
+        placeholder="Optional — e.g. Double Patty"
+        list={existingSections.length ? sectionListId : undefined}
+      />
+      {existingSections.length ? (
+        <datalist id={sectionListId}>
+          {existingSections.map((s) => <option key={s} value={s} />)}
+        </datalist>
+      ) : null}
       <PriceInput label="Price" value={price} onChange={setPrice} />
       <div className="cm-field">
         <span className="cm-field__label">Badges</span>
@@ -422,14 +488,38 @@ function groupBySection(items) {
 }
 
 function EditorGroups({ items, categoryId, mutate, saved, errorToast }) {
-  const { EditorRow, Button } = DS;
+  const { EditorRow, Button, Input } = DS;
   const [editingId, setEditingId] = React.useState(null);
   const [addingIn, setAddingIn] = React.useState(null); // section title or '' for unsectioned
+  const [addingNew, setAddingNew] = React.useState(false); // brand-new sub-section + first item
+  const [renamingSection, setRenamingSection] = React.useState(null); // section title being renamed
+  const [renameVal, setRenameVal] = React.useState('');
   const [drag, setDrag] = React.useState(null); // { id, dy, rowH }
   const dragRef = React.useRef(null);
 
   const groups = groupBySection(items);
+  const existingSections = groups.map((g) => g.title).filter(Boolean);
   const nextSort = items.length ? Math.max(...items.map((i) => i.sort_order)) + 1 : 1;
+
+  /* Rename a sub-section by rewriting the section label on every item that
+     carries it (optimistic, with revert on failure). Merging into an existing
+     name is allowed — it just folds the two groups together. */
+  const doRenameSection = async (oldTitle, raw) => {
+    const next = raw.trim();
+    setRenamingSection(null);
+    if (!next || next === oldTitle) return;
+    const affected = items.filter((i) => (i.section || '') === oldTitle).map((i) => i.id);
+    mutate((list) => list.map((x) => (affected.includes(x.id) ? { ...x, section: next } : x)));
+    try {
+      await dbRenameSection(categoryId, oldTitle, next);
+      saved();
+    } catch (e) {
+      console.warn('[admin] section rename failed:', e);
+      /* only revert rows still holding `next`, so a concurrent edit isn't stomped */
+      mutate((list) => list.map((x) => (affected.includes(x.id) && x.section === next ? { ...x, section: oldTitle } : x)));
+      errorToast();
+    }
+  };
 
   const toggleAvail = async (it, v) => {
     mutate((list) => list.map((x) => (x.id === it.id ? { ...x, is_available: v } : x)));
@@ -505,13 +595,78 @@ function EditorGroups({ items, categoryId, mutate, saved, errorToast }) {
 
   return (
     <React.Fragment>
+      <div className="pt-rowgroup__newsection">
+        <Button
+          variant="secondary"
+          size="sm"
+          icon="plus"
+          onClick={() => { setAddingNew(true); setEditingId(null); setAddingIn(null); setRenamingSection(null); }}
+        >
+          New sub-section
+        </Button>
+      </div>
+      {addingNew ? (
+        <div className="pt-rowgroup">
+          <div className="pt-rowgroup__head">
+            <span className="cm-label">New sub-section</span>
+          </div>
+          <div className="pt-rows">
+            <EditCard
+              item={null}
+              section={''}
+              categoryId={categoryId}
+              nextSort={nextSort}
+              existingSections={existingSections}
+              requireSection
+              saved={saved}
+              errorToast={errorToast}
+              onDone={(didSave, row) => {
+                setAddingNew(false);
+                if (didSave && row) {
+                  mutate((list) =>
+                    list
+                      .concat({ ...row, price: row.price === null ? null : Number(row.price) })
+                      .sort((a, b) => a.sort_order - b.sort_order)
+                  );
+                }
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
       {groups.map((g) => (
         <div className="pt-rowgroup" key={g.title || '_'}>
           <div className="pt-rowgroup__head">
-            <span className="cm-label">{(g.title || 'Items')} · {g.items.length}</span>
-            <Button variant="ghost" size="sm" icon="plus" onClick={() => { setAddingIn(g.title); setEditingId(null); }}>
-              Add item
-            </Button>
+            {renamingSection === g.title && g.title ? (
+              <form
+                className="pt-sectionrename"
+                onSubmit={(e) => { e.preventDefault(); doRenameSection(g.title, renameVal); }}
+              >
+                <Input label="Sub-section name" value={renameVal} onChange={(e) => setRenameVal(e.target.value)} />
+                <div className="pt-sectionrename__actions">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setRenamingSection(null)}>Cancel</Button>
+                  <Button type="submit" variant="primary" size="sm">Save</Button>
+                </div>
+              </form>
+            ) : (
+              <React.Fragment>
+                <span className="cm-label">{(g.title || 'Items')} · {g.items.length}</span>
+                <div className="pt-rowgroup__headactions">
+                  {g.title ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setRenamingSection(g.title); setRenameVal(g.title); setEditingId(null); setAddingIn(null); setAddingNew(false); }}
+                    >
+                      Rename
+                    </Button>
+                  ) : null}
+                  <Button variant="ghost" size="sm" icon="plus" onClick={() => { setAddingIn(g.title); setEditingId(null); setAddingNew(false); setRenamingSection(null); }}>
+                    Add item
+                  </Button>
+                </div>
+              </React.Fragment>
+            )}
           </div>
           <div className="pt-rows">
             {g.items.map((it) =>
@@ -520,6 +675,7 @@ function EditorGroups({ items, categoryId, mutate, saved, errorToast }) {
                   key={it.id}
                   item={it}
                   categoryId={categoryId}
+                  existingSections={existingSections}
                   saved={saved}
                   errorToast={errorToast}
                   onPatched={(row) => {
@@ -553,7 +709,7 @@ function EditorGroups({ items, categoryId, mutate, saved, errorToast }) {
                     available={it.is_available}
                     dragging={!!drag && drag.id === it.id}
                     onToggle={(v) => toggleAvail(it, v)}
-                    onEdit={() => { setEditingId(it.id); setAddingIn(null); }}
+                    onEdit={() => { setEditingId(it.id); setAddingIn(null); setAddingNew(false); setRenamingSection(null); }}
                   />
                 </div>
               )
@@ -564,6 +720,7 @@ function EditorGroups({ items, categoryId, mutate, saved, errorToast }) {
                 section={g.title || null}
                 categoryId={categoryId}
                 nextSort={nextSort}
+                existingSections={existingSections}
                 saved={saved}
                 errorToast={errorToast}
                 onDone={(didSave, row) => {
@@ -581,7 +738,7 @@ function EditorGroups({ items, categoryId, mutate, saved, errorToast }) {
           </div>
         </div>
       ))}
-      {groups.length === 0 ? (
+      {groups.length === 0 && !addingNew ? (
         <div className="pt-rowgroup">
           <div className="pt-rowgroup__head">
             <span className="cm-label">Items · 0</span>
@@ -894,6 +1051,183 @@ function JokesEditor({ jokes, lang, mutate, saved, errorToast }) {
 }
 
 /* ============================================================ category note */
+/* ============================================================ category manager
+   Add / rename / reorder / delete top-level menu categories. Collapsed by
+   default so the day-to-day item editing stays front-and-centre. Slug is
+   derived from the name (NOT NULL + unique + ^[a-z0-9-]+$ in the schema), so the
+   owner only ever types a friendly name. Delete cascades to the category's items
+   (FK on delete cascade), hence the confirm step. */
+function CategoryManager({ cats, tab, setTab, mutateCats, dropCategory, saved, errorToast }) {
+  const { Input, Button, Modal } = DS;
+  const [open, setOpen] = React.useState(false);
+  const [newName, setNewName] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
+  const [renamingId, setRenamingId] = React.useState(null);
+  const [renameVal, setRenameVal] = React.useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = React.useState(null);
+
+  const sorted = [...cats].sort((a, b) => a.sort_order - b.sort_order);
+  const dupMsg = (e, fallback) => {
+    const m = String(e && e.message);
+    if (/slug/i.test(m)) return errorToast('That name is too similar to an existing one — tweak the spelling.');
+    return errorToast(/duplicate|unique|already exists/i.test(m) ? 'That name already exists.' : fallback);
+  };
+
+  const addCategory = async () => {
+    if (busy) return; // guard the Enter-key path (the disabled button only blocks clicks)
+    const name = newName.trim();
+    if (!name) { errorToast('Name the category first.'); return; }
+    /* slug is internal-only (the friendly name drives all rendering); fall back to
+       a synthetic valid slug so a non-Latin name can still be added. */
+    const slug = slugify(name) || ('cat-' + Date.now().toString(36));
+    setBusy(true);
+    try {
+      const sort_order = cats.length ? Math.max(...cats.map((c) => c.sort_order)) + 1 : 1;
+      const row = await dbInsertCategory({ name, slug, sort_order, is_dietary: false });
+      mutateCats((list) => list.concat(row).sort((a, b) => a.sort_order - b.sort_order));
+      setNewName('');
+      saved();
+    } catch (e) {
+      console.warn('[admin] add category failed:', e);
+      dupMsg(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const renameCategory = async (id) => {
+    const name = renameVal.trim();
+    setRenamingId(null);
+    const before = cats.find((c) => c.id === id);
+    if (!name || !before || name === before.name) return;
+    mutateCats((list) => list.map((c) => (c.id === id ? { ...c, name } : c)));
+    try {
+      await dbUpdateCategory(id, { name });
+      saved();
+    } catch (e) {
+      console.warn('[admin] rename category failed:', e);
+      mutateCats((list) => list.map((c) => (c.id === id ? { ...c, name: before.name } : c)));
+      dupMsg(e);
+    }
+  };
+
+  const move = async (id, dir) => {
+    const idx = sorted.findIndex((c) => c.id === id);
+    const j = idx + dir;
+    if (j < 0 || j >= sorted.length) return;
+    const a = sorted[idx];
+    const b = sorted[j];
+    const swap = (list) =>
+      list
+        .map((c) => (c.id === a.id ? { ...c, sort_order: b.sort_order } : c.id === b.id ? { ...c, sort_order: a.sort_order } : c))
+        .sort((x, y) => x.sort_order - y.sort_order);
+    mutateCats(swap);
+    if (tab === idx) setTab(j); else if (tab === j) setTab(idx);
+    try {
+      await Promise.all([
+        dbUpdateCategory(a.id, { sort_order: b.sort_order }),
+        dbUpdateCategory(b.id, { sort_order: a.sort_order }),
+      ]);
+      saved();
+    } catch (e) {
+      console.warn('[admin] reorder category failed:', e);
+      mutateCats((list) =>
+        list
+          .map((c) => (c.id === a.id ? { ...c, sort_order: a.sort_order } : c.id === b.id ? { ...c, sort_order: b.sort_order } : c))
+          .sort((x, y) => x.sort_order - y.sort_order)
+      );
+      errorToast();
+    }
+  };
+
+  const deleteCategory = async (id) => {
+    const delIdx = sorted.findIndex((c) => c.id === id);
+    setBusy(true);
+    try {
+      await dbDeleteCategory(id);
+      dropCategory(id);
+      setConfirmDeleteId(null);
+      /* keep the editor on the category the owner was viewing, not the deleted
+         row: shift left only if the deleted one sat before it; clamp if it WAS it. */
+      if (delIdx < tab) setTab(tab - 1);
+      else if (delIdx === tab) setTab(Math.max(0, Math.min(tab, cats.length - 2)));
+      saved();
+    } catch (e) {
+      console.warn('[admin] delete category failed:', e);
+      errorToast("Couldn't delete — try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="pt-catmgr">
+      <button
+        type="button"
+        className="pt-catmgr__toggle cm-label"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {open ? 'Hide categories' : 'Manage categories'}
+      </button>
+      {open ? (
+        <div className="pt-catmgr__panel">
+          {sorted.map((c, i) => (
+            <div className="pt-catrow" key={c.id}>
+              {renamingId === c.id ? (
+                <form className="pt-catrow__rename" onSubmit={(e) => { e.preventDefault(); renameCategory(c.id); }}>
+                  <Input label="Category name" value={renameVal} onChange={(e) => setRenameVal(e.target.value)} />
+                  <div className="pt-catrow__actions">
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setRenamingId(null)}>Cancel</Button>
+                    <Button type="submit" variant="primary" size="sm">Save</Button>
+                  </div>
+                </form>
+              ) : (
+                <React.Fragment>
+                  <span className="pt-catrow__name">{c.name}</span>
+                  <div className="pt-catrow__actions">
+                    <Button variant="ghost" size="sm" disabled={i === 0} onClick={() => move(c.id, -1)} aria-label={'Move ' + c.name + ' up'}>↑</Button>
+                    <Button variant="ghost" size="sm" disabled={i === sorted.length - 1} onClick={() => move(c.id, 1)} aria-label={'Move ' + c.name + ' down'}>↓</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setRenamingId(c.id); setRenameVal(c.name); }}>Rename</Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={sorted.length <= 1}
+                      title={sorted.length <= 1 ? 'Keep at least one category' : undefined}
+                      onClick={() => setConfirmDeleteId(c.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </React.Fragment>
+              )}
+            </div>
+          ))}
+          <form className="pt-catmgr__add" onSubmit={(e) => { e.preventDefault(); addCategory(); }}>
+            <Input label="New category" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Paneer Burgers" />
+            <Button type="submit" variant="primary" size="sm" icon="plus" disabled={busy}>Add category</Button>
+          </form>
+        </div>
+      ) : null}
+      <Modal
+        open={confirmDeleteId !== null}
+        title="Delete this category?"
+        onClose={() => setConfirmDeleteId(null)}
+        actions={
+          <React.Fragment>
+            <Button variant="ghost" onClick={() => setConfirmDeleteId(null)} disabled={busy}>Keep it</Button>
+            <Button variant="primary" onClick={() => deleteCategory(confirmDeleteId)} disabled={busy}>Delete</Button>
+          </React.Fragment>
+        }
+      >
+        <p style={{ margin: 0 }}>
+          {(cats.find((c) => c.id === confirmDeleteId) || {}).name || 'This category'} and all of its items come off the menu everywhere. No undo.
+        </p>
+      </Modal>
+    </div>
+  );
+}
+
 function CategoryNote({ category, onSaved, saved, errorToast }) {
   const { Textarea, Button } = DS;
   const [note, setNote] = React.useState(category.note || '');
@@ -1022,8 +1356,8 @@ function SiteContentEditor({ site, onSaved, saved, errorToast }) {
 async function fetchAdminData() {
   const sb = await getSupabase();
   const [cats, items, site, jokes] = await Promise.all([
-    sb.from('categories').select('id,name,slug,sort_order,note,is_dietary').order('sort_order'),
-    sb.from('items').select('id,category_id,section,name,description,price,badges,photo_url,is_available,sort_order').order('sort_order'),
+    sb.from('categories').select('id,name,slug,sort_order,note,is_dietary').order('sort_order').order('id'),
+    sb.from('items').select('id,category_id,section,name,description,price,badges,photo_url,is_available,sort_order').order('sort_order').order('id'),
     sb.from('site_content').select('key,value'),
     /* staff RLS lets authenticated read ALL jokes (active + retired) so the
        owner can manage the retired ones; the public anon read is active-only. */
@@ -1135,6 +1469,21 @@ export function AdminEditor({ mobile = true }) {
 
   const menuBody = (
     <React.Fragment>
+      <CategoryManager
+        cats={db.cats}
+        tab={tab}
+        setTab={setTab}
+        mutateCats={(fn) => setDb((d) => ({ ...d, cats: fn(d.cats) }))}
+        dropCategory={(id) =>
+          setDb((d) => ({
+            ...d,
+            cats: d.cats.filter((c) => c.id !== id),
+            items: d.items.filter((i) => i.category_id !== id),
+          }))
+        }
+        saved={saved}
+        errorToast={errorToast}
+      />
       <Tabs items={db.cats.map((c) => c.name)} active={tab} onChange={setTab} />
       <CategoryNote
         key={activeCat.id}

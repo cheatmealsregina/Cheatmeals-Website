@@ -95,10 +95,14 @@ function MenuBody({ category, query, picksOnly }) {
       <React.Fragment>
         {menu.note ? <p className="pt-catnote">{menu.note}</p> : null}
         {sections.length ? sections.map((s) => (
-          <React.Fragment key={s.title}>
-            <div className="pt-subhead">
-              <SectionHeader as="h3" title={s.title + ' PATTY'} accent={s.accent} script={s.script} stars={false} />
-            </div>
+          <React.Fragment key={s.title || '_unsectioned'}>
+            {/* unsectioned items (section null/empty) sit in a titleless group —
+               render their cards with no sub-header rather than a hollow one */}
+            {s.title ? (
+              <div className="pt-subhead">
+                <SectionHeader as="h3" title={s.title} accent={s.accent} stars={false} />
+              </div>
+            ) : null}
             <Cards items={s.items} />
           </React.Fragment>
         )) : <EmptyState line="No Chef's Picks in this section — yet." />}
