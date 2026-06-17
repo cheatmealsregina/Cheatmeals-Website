@@ -13,6 +13,16 @@
 
 const ORIGIN = 'https://cheatmealshoib.com';
 
+/* Maps a pathname to the top-level layout it renders. Used by both the router
+   (App.jsx) and the boot logic (main.jsx) so prerender/hydration agree on what
+   "this page" is: every non-game/jokes/admin path is the one-page site. */
+export function renderKey(path) {
+  if (path.startsWith('/game')) return 'game';
+  if (path.startsWith('/jokes')) return 'jokes';
+  if (path.startsWith('/admin')) return 'admin';
+  return 'site';
+}
+
 function setMeta(key, content, attr = 'name') {
   let el = document.head.querySelector(`meta[${attr}="${key}"]`);
   if (!el) {

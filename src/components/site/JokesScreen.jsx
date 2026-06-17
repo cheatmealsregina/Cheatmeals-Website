@@ -71,18 +71,19 @@ export function JokesScreen({ mobile }) {
   const [loaded, setLoaded] = React.useState(() => seedJokes().length > 0);
   const [againLabel, setAgainLabel] = React.useState(AGAIN_LABELS[0]);
 
-  /* Pick the first joke synchronously from the bundled seed so the card is on
-     the very first paint — no flash of empty. Respects persisted language and
-     seen-set so a returning visitor doesn't immediately get a repeat. */
+  /* First joke is deterministic and user-independent: the first joke of the
+     default language, with no Math.random and no localStorage read. This makes
+     the prerendered HTML identical to the client's first render, so /jokes
+     hydrates cleanly. The visitor's saved language and no-repeat history are
+     restored just after mount (below) and "Hit me again" shuffles randomly from
+     then on — so variety is intact, it just doesn't gate the first paint. */
   const [initial] = React.useState(() => {
     const s = seedJokes();
     const langs = langsFrom(s);
-    if (!langs.length) return { lang: null, current: null, seen: readSeen() };
-    const saved = readLang();
-    const lang = saved && langs.includes(saved) ? saved : langs[0];
-    const stored = readSeen();
-    const { chosen, seen: ns } = pickJoke(s.filter((j) => j.lang === lang), stored[lang], null);
-    return { lang, current: chosen, seen: { ...stored, [lang]: ns } };
+    if (!langs.length) return { lang: null, current: null };
+    const lang = langs[0];
+    const pool = s.filter((j) => j.lang === lang);
+    return { lang, current: pool[0] || null };
   });
   const [lang, setLang] = React.useState(initial.lang);
   const [current, setCurrent] = React.useState(initial.current);
@@ -92,9 +93,31 @@ export function JokesScreen({ mobile }) {
 
   React.useEffect(() => { ensureIndicFonts(); }, []);
 
-  /* Persist the synchronous first pick so a refresh advances the seen-set. */
+  /* Restore the visitor's saved language + bag-shuffle history after mount —
+     post-hydration, so it never disturbs the matched first paint. A fresh
+     visitor (and the prerender, which has no localStorage) has nothing to
+     restore, so we just advance the seen-set with the deterministic first pick
+     and leave the joke as-is. */
   React.useEffect(() => {
-    if (initial.current) { writeSeen(initial.seen); if (lang) writeLang(lang); setSeen(initial.seen); }
+    const s = seedJokes();
+    const langs0 = langsFrom(s);
+    if (!langs0.length || !initial.current) return;
+    const saved = readLang();
+    const stored = readSeen();
+    const wantLang = saved && langs0.includes(saved) ? saved : initial.lang;
+    const personalise =
+      wantLang !== initial.lang ||
+      (Array.isArray(stored[initial.lang]) && stored[initial.lang].length > 0);
+    if (!personalise) {
+      const merged = { ...stored, [initial.lang]: [...(stored[initial.lang] || []), initial.current.text] };
+      writeSeen(merged); setSeen(merged); writeLang(initial.lang);
+      return;
+    }
+    const { chosen, seen: ns } = pickJoke(s.filter((j) => j.lang === wantLang), stored[wantLang], null);
+    if (!chosen) return;
+    setLang(wantLang); setCurrent(chosen);
+    const merged = { ...stored, [wantLang]: ns };
+    setSeen(merged); writeSeen(merged); writeLang(wantLang);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Overlay live jokes; on any error keep the bundled seed (never blank). */

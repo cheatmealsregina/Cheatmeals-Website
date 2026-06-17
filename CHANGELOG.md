@@ -1,5 +1,51 @@
 # Changelog
 
+## Build-time prerendering — crawlable HTML (June 17, 2026)
+
+The site was a client-rendered SPA: `curl` (and a JS-less crawler) saw an empty
+`<div id="root">`. Each public route now ships fully-rendered static HTML with
+the real brand/menu/address text, then hydrates into the same SPA on load.
+
+- **`_reference/prerender.mjs`** runs after `vite build` (the `build` script is
+  now `vite build && node _reference/prerender.mjs`). It serves the freshly
+  built `dist` over a tiny static server, drives a headless browser to each
+  public route at a **mobile viewport** with live data blocked (so the snapshot
+  renders from the bundled seed — content-rich, never coupled to Supabase), and
+  writes the serialized DOM back: `/` → `dist/index.html`, `/game` →
+  `dist/game/index.html`, `/jokes` → `dist/jokes/index.html`. Menu/About/Team/
+  Visit are sections of `/`, so the home HTML already contains all of them.
+  `/admin` is deliberately not prerendered. The browser is local Edge in dev and
+  `@sparticuz/chromium` on Linux/Vercel; the step is **non-fatal** — if no
+  browser is available it logs and the build still succeeds (degrading to the
+  former client-only SPA) so a deploy can never break on it.
+- **Hydration** (`src/main.jsx`): the prerender stamps
+  `<html data-prerendered="site|game|jokes">`; boot `hydrateRoot`s when that
+  matches the route and `#root` has content, else `createRoot`s (admin, dev,
+  un-prerendered paths, or a failed prerender). It renders from the seed first
+  so the first client paint matches the static HTML, then merges live data onto
+  the same `window.CM_DATA` object every screen holds and bumps a small store
+  (`src/lib/liveData.js`) to re-render — no per-component data plumbing.
+- **Routing** (`src/App.jsx`): dropped `React.lazy` for the route screens (a
+  lazy chunk would suspend on hydration and flash a fallback over the
+  prerendered content). `main.jsx` preloads the matched route's chunk via
+  dynamic import and passes the resolved component in — code-splitting intact,
+  component present synchronously at hydrate.
+- **Clean hydration across themes & viewports**, fixed at the source so there
+  are zero hydration mismatches on first paint:
+  - `useTheme` renders `light` first (the prerender theme) and corrects to the
+    real theme on mount — no flash, since `[data-theme]` CSS already painted the
+    right colours before React.
+  - `useIsMobile` renders mobile first (the prerender viewport) and corrects on
+    mount; desktop reflows to its layout via a normal post-mount render, not a
+    hydration error.
+  - `JokesScreen`'s first joke is now deterministic (first joke of the default
+    language, no `Math.random`/localStorage on the first render); the saved
+    language + bag-shuffle history are restored just after mount.
+- Verified by `_reference/verify-prerender.mjs`: raw HTML of every route carries
+  real content + the correct per-route canonical; all routes hydrate with **no
+  React hydration errors** at 375px in light and dark; `/admin` is excluded and
+  resolves `noindex`.
+
 ## SEO & crawlability (June 17, 2026)
 
 - **`public/robots.txt`** — crawling open, `Disallow: /admin`, and a
