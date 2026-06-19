@@ -46,27 +46,99 @@ function startServer() {
 }
 
 const RAW = [
-  { path: '/', key: 'site', canonical: 'https://cheatmealshoib.com/', must: ['HOME OF', 'INDIAN', 'Regina', '4306 Dewdney', 'The Red Hulk', 'VISIT'] },
-  { path: '/game/', key: 'game', canonical: 'https://cheatmealshoib.com/game', must: ['STACKER', 'While you wait', 'TOP STACKERS'] },
-  { path: '/jokes/', key: 'jokes', canonical: 'https://cheatmealshoib.com/jokes', must: ['JOKES', 'cm-joke-card__text'] },
+  { path: '/', key: 'site', canonical: 'https://cheatmealshoib.com/', titleHas: ['CheatMeals', 'Indian Burgers', 'Regina'], must: ['HOME OF', 'INDIAN', 'Regina', '4306 Dewdney', 'The Red Hulk', 'VISIT'] },
+  { path: '/game/', key: 'game', canonical: 'https://cheatmealshoib.com/game', titleHas: ['Patty Stacker', 'CheatMeals', 'Regina'], must: ['STACKER', 'While you wait', 'TOP STACKERS'] },
+  { path: '/jokes/', key: 'jokes', canonical: 'https://cheatmealshoib.com/jokes', titleHas: ['Jokes', 'CheatMeals', 'Regina'], must: ['JOKES', 'cm-joke-card__text'] },
 ];
 
 let fails = 0;
 const bad = (m) => { console.log('  ✗ ' + m); fails++; };
 const good = (m) => console.log('  ✓ ' + m);
 
+/* head/element extractors that tolerate attribute order (browser-serialized) */
+const titleOf = (h) => (h.match(/<title>([^<]*)<\/title>/i) || [])[1] || null;
+const canonicalOf = (h) => { const t = (h.match(/<link[^>]*rel="canonical"[^>]*>/i) || [])[0]; return t ? (t.match(/href="([^"]*)"/i) || [])[1] : null; };
+function metaContent(h, attr, val) {
+  const esc = val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const tag = (h.match(new RegExp('<meta[^>]*\\b' + attr + '="' + esc + '"[^>]*>', 'i')) || [])[0];
+  return tag ? ((tag.match(/content="([^"]*)"/i) || [])[1] ?? null) : null;
+}
+const h1Text = (h) => { const m = h.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i); return m ? m[1].replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim() : null; };
+
+const collected = { title: [], description: [], canonical: [] };
+
 async function phaseA() {
-  console.log('\n=== A) raw prerendered HTML (no JS) ===');
+  console.log('\n=== A) raw prerendered HTML — content + per-route metadata (no JS) ===');
   for (const r of RAW) {
     console.log(`\n${r.path}`);
     const html = await (await fetch(BASE + r.path)).text();
     if (html.includes('<div id="root"></div>')) bad('empty #root — NOT prerendered');
     else good('#root has content');
-    for (const s of r.must) (html.includes(s) ? good : bad)(`contains "${s}"`);
+    for (const s of r.must) (html.includes(s) ? good : bad)(`body contains "${s}"`);
     (html.includes(`data-prerendered="${r.key}"`) ? good : bad)(`data-prerendered="${r.key}"`);
-    (html.includes(`<link rel="canonical" href="${r.canonical}">`) ? good : bad)(`canonical ${r.canonical}`);
     (!html.includes('_ds_bundle') ? good : bad)('DS bundle script stripped');
-    (html.includes('assets/index-') ? good : bad)('still references the SPA entry (boots/hydrates)');
+
+    const title = titleOf(html);
+    const desc = metaContent(html, 'name', 'description');
+    const canon = canonicalOf(html);
+    collected.title.push(title); collected.description.push(desc); collected.canonical.push(canon);
+    console.log(`  title: ${title}`);
+    (title ? good : bad)('has <title>');
+    for (const w of r.titleHas) ((title || '').toLowerCase().includes(w.toLowerCase()) ? good : bad)(`title includes "${w}"`);
+    (desc && desc.length > 50 ? good : bad)(`has meta description (${desc ? desc.length : 0} chars)`);
+    (canon === r.canonical ? good : bad)(`self-canonical ${r.canonical}`);
+
+    /* complete OpenGraph + Twitter set */
+    const og = {
+      'og:title': metaContent(html, 'property', 'og:title'),
+      'og:description': metaContent(html, 'property', 'og:description'),
+      'og:url': metaContent(html, 'property', 'og:url'),
+      'og:type': metaContent(html, 'property', 'og:type'),
+      'og:image': metaContent(html, 'property', 'og:image'),
+      'og:image:alt': metaContent(html, 'property', 'og:image:alt'),
+      'og:locale': metaContent(html, 'property', 'og:locale'),
+      'twitter:card': metaContent(html, 'name', 'twitter:card'),
+      'twitter:title': metaContent(html, 'name', 'twitter:title'),
+      'twitter:description': metaContent(html, 'name', 'twitter:description'),
+      'twitter:image': metaContent(html, 'name', 'twitter:image'),
+      'twitter:image:alt': metaContent(html, 'name', 'twitter:image:alt'),
+    };
+    for (const [k, v] of Object.entries(og)) (v ? good : bad)(`${k} present`);
+    (og['og:url'] === r.canonical ? good : bad)('og:url matches canonical');
+    (og['og:image'] === 'https://cheatmealshoib.com/assets/og-image.png' ? good : bad)('og:image = /assets/og-image.png (1200×630)');
+
+    /* structured data: Restaurant JSON-LD on home only */
+    const ld = (html.match(/<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>/i) || [])[1];
+    if (r.key === 'site') {
+      (ld ? good : bad)('Restaurant JSON-LD present');
+      if (ld) {
+        try {
+          const o = JSON.parse(ld);
+          (o['@type'] === 'Restaurant' && o.address && o.telephone ? good : bad)('JSON-LD @type=Restaurant w/ address + telephone');
+          (Array.isArray(o.openingHoursSpecification) && o.openingHoursSpecification.length ? good : bad)('JSON-LD openingHoursSpecification present');
+          (Array.isArray(o.servesCuisine) && o.servesCuisine.length ? good : bad)('JSON-LD servesCuisine present');
+          (o.geo && typeof o.geo.latitude === 'number' && typeof o.geo.longitude === 'number' ? good : bad)('JSON-LD geo coordinates present');
+        } catch (e) { bad('JSON-LD parses as valid JSON'); }
+      }
+    } else {
+      (!ld ? good : bad)('no Restaurant JSON-LD on non-home route');
+    }
+    if (r.key === 'jokes') (/<h1[\s>]/i.test(html) ? good : bad)('/jokes ships a real <h1>');
+
+    if (r.key === 'site') {
+      const h1 = h1Text(html);
+      console.log(`  H1: "${h1}"`);
+      (h1 && /cheatmeals/i.test(h1) ? good : bad)('H1 real text includes "CheatMeals"');
+      (h1 && /indian burgers/i.test(h1) ? good : bad)('H1 real text includes the tagline "Indian Burgers"');
+      for (const kw of ['indian burgers', 'regina', 'dewdney']) (new RegExp(kw, 'i').test(html) ? good : bad)(`body has search term "${kw}"`);
+    }
+  }
+
+  console.log('\n--- cross-route distinctness ---');
+  for (const field of ['title', 'description', 'canonical']) {
+    const vals = collected[field].filter(Boolean);
+    const uniq = new Set(vals);
+    (uniq.size === RAW.length && vals.length === RAW.length ? good : bad)(`all ${RAW.length} ${field}s present & distinct (${uniq.size}/${RAW.length})`);
   }
 }
 

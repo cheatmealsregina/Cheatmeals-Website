@@ -1,0 +1,25 @@
+import http from 'http';
+import puppeteer from 'puppeteer-core';
+import { readFile } from 'fs/promises';
+import { existsSync, statSync, mkdirSync } from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
+const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
+const OUT = fileURLToPath(new URL('./shots/', import.meta.url));
+const PORT = 4326;
+const EDGE = ['C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe','C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'].find((p)=>existsSync(p));
+const MIME={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2','.json':'application/json'};
+const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+function fileFor(p){if(p==='/'||p.includes('..'))return path.join(DIST,'index.html');const d=path.join(DIST,p);if(existsSync(d)&&statSync(d).isFile())return d;const i=path.join(DIST,p,'index.html');if(existsSync(i))return i;if(!path.extname(p))return path.join(DIST,'index.html');return d;}
+const server=http.createServer(async(req,res)=>{try{const f=fileFor(decodeURIComponent((req.url||'/').split('?')[0]));res.setHeader('content-type',MIME[path.extname(f)]||'application/octet-stream');res.end(await readFile(f));}catch(e){res.statusCode=500;res.end('e');}});
+await new Promise(r=>server.listen(PORT,r));
+mkdirSync(OUT,{recursive:true});
+const b=await puppeteer.launch({executablePath:EDGE,headless:'new',args:['--no-sandbox']});
+const p=await b.newPage();
+await p.setViewport({width:390,height:900,deviceScaleFactor:2,isMobile:true});
+await p.goto(`http://localhost:${PORT}/jokes`,{waitUntil:'networkidle0',timeout:30000});
+await sleep(1500);
+await p.screenshot({path:path.join(OUT,'jokes-mobile.png')});
+const tag = await p.evaluate(()=>{const h=document.querySelector('#jokes h1, .pt-jokes-page h1, h1'); return h?{tag:h.tagName, text:h.textContent.trim()}:null;});
+console.log('top heading:', JSON.stringify(tag));
+await b.close();server.close();

@@ -1,5 +1,41 @@
 # Changelog
 
+## Per-route titles, descriptions, canonicals & social cards (June 17, 2026)
+
+Each indexable route now has its own descriptive metadata, baked into the
+prerendered HTML (not just set client-side) — `src/lib/routeHead.js` is the
+single source of truth, applied during the prerender snapshot.
+
+- **Distinct `<title>` / description / self-canonical per route** (home, /game,
+  /jokes — Menu/About/Team/Visit are sections of home, so they share its
+  metadata, which already carries their content + keywords):
+  - Home — "CheatMeals — Home of Indian Burgers | Regina"
+  - /game — "Patty Stacker — Burger Stacking Game | CheatMeals Regina"
+  - /jokes — "Jokes On The House | CheatMeals — Indian Burgers, Regina"
+  No two routes share a canonical; each title naturally carries the brand, the
+  food, and Regina where it fits.
+- **Complete OpenGraph + Twitter cards on every route** — per-route
+  title/description/url plus the shared `og:image` (`/assets/og-image.png`,
+  1200×630), `og:type`, `og:site_name`, and `twitter:card=summary_large_image`.
+  `index.html` ships the matching home defaults as the no-JS baseline.
+- **Homepage `<h1>` now real text including the brand** — a visible "CheatMeals"
+  eyebrow above "HOME OF INDIAN BURGERS", so the H1 reads
+  "CheatMeals — Home of Indian Burgers" in the HTML. The body already carries
+  the searched terms ("Indian burgers", "Regina", "Dewdney").
+- **Restaurant (LocalBusiness) JSON-LD on the home page**, built from the live
+  data so it always matches the visible NAP + hours: `@type` Restaurant, address
+  (4306 Dewdney Avenue, Regina, SK, CA), telephone, `openingHoursSpecification`
+  (Mon–Sun 11:00–21:00), `servesCuisine` (Indian, Burgers), `priceRange`,
+  `hasMenu`, and `sameAs` the Instagram. (`geo` is intentionally omitted until
+  exact coordinates are supplied — no placeholder.)
+- **Refinements from an adversarial SEO audit:** removed forced "Regina" from
+  the /game leaderboard copy (geo-forcing); gave /jokes a real `<h1>` (it was
+  shipping only an `<h2>`); lightened the /jokes title to drop the off-topic
+  "Indian Burgers"; reworked the home description to add "paneer" + an "Indian
+  street food" category signal and drop the in-snippet street address; and
+  completed the social set with `og:image:alt`, `twitter:image:alt`, and
+  `og:locale=en_CA`.
+
 ## Build-time prerendering — crawlable HTML (June 17, 2026)
 
 The site was a client-rendered SPA: `curl` (and a JS-less crawler) saw an empty

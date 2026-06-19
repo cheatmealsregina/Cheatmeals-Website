@@ -16,6 +16,7 @@ export function HomeScreen({ mobile }) {
       <main className="pt-hero" id="home">
         <div className="pt-hero__copy">
           <h1 className="pt-hero__h cm-display">
+            <span className="pt-hero__brand">CheatMeals</span>
             <span>HOME OF</span>
             <span><span style={{ color: 'var(--cm-red)' }}>INDIAN</span> BURGERS<span className="pt-hero__star">★</span></span>
           </h1>

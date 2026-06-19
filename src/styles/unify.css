@@ -163,6 +163,7 @@
   gap: 2px;
   font-size: clamp(44px, 7.5vw, 88px);
 }
+.pt-hero__brand { font-size: 0.3em; line-height: 1; letter-spacing: 0.06em; color: var(--cm-red); text-transform: uppercase; margin-bottom: var(--space-2); }
 .pt-hero__script { font-size: 0.42em; line-height: 1; color: var(--color-text-muted); }
 .pt-hero__star { color: var(--cm-red); font-size: 0.38em; vertical-align: 0.45em; font-family: var(--font-body); letter-spacing: 0; }
 .pt-hero__sub { margin: 0; font-size: var(--text-lg); color: var(--color-text-muted); max-width: 44ch; }

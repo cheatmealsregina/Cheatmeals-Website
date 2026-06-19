@@ -186,7 +186,7 @@ export function JokesScreen({ mobile }) {
     <Screen mobile={mobile} label="Jokes">
       <Nav mobile={mobile} active="" />
       <main className="pt-section pt-jokes-page" id="jokes">
-        <SectionHeader title="JOKES" accent="JOKES" script="on the house" scriptPosition="after" />
+        <SectionHeader as="h1" title="JOKES" accent="JOKES" script="on the house" scriptPosition="after" />
         <p className="pt-jokes-page__sub">Fresh material while your order's on the grill.</p>
 
         {showSwitcher ? (
