@@ -131,8 +131,8 @@ function buildRestaurantSchema() {
     description: META.site.description,
     url: ORIGIN + '/',
     image: OG_IMAGE,
-    servesCuisine: ['Indian', 'Burgers'],
-    priceRange: '$$',
+    servesCuisine: ['Indian', 'Burgers', 'Street Food'],
+    priceRange: '$',
     address: {
       '@type': 'PostalAddress',
       streetAddress: d.address,
