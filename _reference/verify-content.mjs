@@ -132,6 +132,8 @@ async function main() {
 
     console.log('--- egg / eggless sauce lines verbatim (per page) ---');
     const EGG = {
+      '/what-is-an-indian-burger': 'Regular mayo-based sauces contain egg. For Jain and Swaminarayan food, CheatMeals uses eggless sauces. Mention the restriction clearly when ordering.',
+      '/vegetarian-burgers-regina': 'Regular mayo-based sauces contain egg. For Jain and Swaminarayan food, CheatMeals uses eggless sauces. Mention the restriction clearly when ordering.',
       '/frankies-regina': 'For Jain or Swaminarayan orders, mention your restriction clearly so eggless sauces can be used instead of regular mayo-based sauces.',
       '/indian-sandwiches-regina': 'For Jain or Swaminarayan orders, mention the restriction clearly before ordering so eggless sauces can be used instead of regular mayo-based sauces.',
       '/loaded-fries-regina': 'Regular dips and sauces are mayo-based and contain egg. For Jain and Swaminarayan orders, CheatMeals uses eggless sauces. Mention the restriction clearly when ordering so the sauce situation behaves itself.',

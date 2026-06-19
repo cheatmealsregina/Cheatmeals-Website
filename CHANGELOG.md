@@ -1,5 +1,26 @@
 # Changelog
 
+## Final QA pass + cross-page egg/eggless consistency (June 19, 2026)
+
+Ran the full content QA checklist across the nine SEO pages (build, prerender,
+sitemap, FAQ JSON-LD, metadata, word counts, both themes, 375px, footer
+reachability) plus Lighthouse and an adversarial qualitative review.
+
+- **Lighthouse SEO = 100** on all nine content pages — no failing SEO audits.
+- **Word counts** 348–672 per page (all well over the 300 floor).
+- **Cross-page dietary consistency**: added the owner-confirmed line *"Regular
+  mayo-based sauces contain egg. For Jain and Swaminarayan food, CheatMeals uses
+  eggless sauces. Mention the restriction clearly when ordering."* to
+  `/what-is-an-indian-burger` and `/vegetarian-burgers-regina` (both name
+  "schezwan mayo" as an ingredient), matching the `/paneer` and `/aloo` pages.
+  Uses only facts from the Confirmed Dietary Notes; no other claims added.
+- Qualitative review (no generic AI filler; no unsupported claims, awards,
+  certifications, fake reviews or invented procedures) came back clean for all
+  nine via an adversarial multi-agent pass.
+- Verification tooling added: `_reference/qa-final.mjs` (word counts + dietary
+  facts) and `_reference/serve-dist.mjs` (Vercel-like static server for
+  Lighthouse).
+
 ## Persistent footer "Learn More" links + sitemap confirmation (June 19, 2026)
 
 Made all nine SEO content pages reachable from every page and confirmed the

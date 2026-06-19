@@ -39,6 +39,7 @@ export function IndianBurgerPage({ mobile }) {
       <ContentSection title="Chutney, Sauce, Crunch, Repeat">
         <p>The real magic of an Indian burger is the build.</p>
         <p>You get the bun, yes. But then comes the actual drama: chutneys, masala, house-style sauces, pickled onions, crispy onions, cilantro, jalapenos, shredded cheese, marble cheese, and patties that do more than just sit there.</p>
+        <p>Regular mayo-based sauces contain egg. For Jain and Swaminarayan food, CheatMeals uses eggless sauces. Mention the restriction clearly when ordering.</p>
         <p>A CheatMeals burger is built for people who want flavour from the first bite to the last corner of the wrapper.</p>
       </ContentSection>
 

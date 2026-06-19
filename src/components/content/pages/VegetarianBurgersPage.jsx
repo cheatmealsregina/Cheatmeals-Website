@@ -31,6 +31,7 @@ export function VegetarianBurgersPage({ mobile }) {
       <ContentSection title="Paneer Patties: The Heavy Hitters">
         <p>Paneer burgers are for the serious craving crowd.</p>
         <p>They bring a richer bite and hold up beautifully with schezwan mayo, chilli sauce, makhni-style flavours, pickled onions, crispy onions, jalapenos, cilantro, and cheese.</p>
+        <p>Regular mayo-based sauces contain egg. For Jain and Swaminarayan food, CheatMeals uses eggless sauces. Mention the restriction clearly when ordering.</p>
         <p>Look for options like <strong>King Kong Paneer</strong>, <strong>Hong Kong Paneer</strong>, <strong>Flame Thrower Paneer</strong>, <strong>Paneer Pataka</strong>, <strong>Paneer Chaska</strong>, and <strong>Paneer Makhni</strong>.</p>
         <p>Paneer people know. Everyone else finds out quickly.</p>
       </ContentSection>
