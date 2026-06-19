@@ -2,12 +2,12 @@ import React from 'react';
 import { Screen } from '../shared/Screen.jsx';
 import { Nav } from '../shared/Nav.jsx';
 import { CallBar } from '../shared/CallBar.jsx';
+import { SiteFooter } from '../shared/SiteFooter.jsx';
 import { LearnMore } from './LearnMore.jsx';
 import { SITE_LINKS } from '../../lib/siteLinks.js';
 import { contentRouteFor } from '../../lib/contentRoutes.js';
 
 const DS = window.CheatMealsDesignSystem_e4e564;
-const data = window.CM_DATA;
 
 /* Reusable long-form content-page layout. Matches the site exactly: shared Nav,
  * the brand SectionHeader (display H1 + dotted rules), a readable prose column,
@@ -20,7 +20,7 @@ const data = window.CM_DATA;
  *   lead     — the opening paragraph (string or JSX), larger + centred
  *   children — the prose (use <ContentSection>, <ContentCta>, <Faq>) */
 export function ContentPage({ mobile, heading, lead, currentPath, children }) {
-  const { SectionHeader, Footer } = DS;
+  const { SectionHeader } = DS;
   const route = contentRouteFor(currentPath);
   return (
     <Screen mobile={mobile} label={heading}>
@@ -33,15 +33,10 @@ export function ContentPage({ mobile, heading, lead, currentPath, children }) {
 
         <div className="cm-content__prose">{children}</div>
 
-        <LearnMore tokens={route && route.links} currentPath={currentPath} showCall />
+        <LearnMore tokens={route && route.links} currentPath={currentPath} showCall heading="Related pages" />
       </main>
       {mobile ? <CallBar /> : null}
-      <Footer
-        logoSrc="/assets/logos/cheatmeals-primary-inverse.svg"
-        address={data.address + ', ' + data.city}
-        phone={data.phone}
-        socials={false}
-      />
+      <SiteFooter />
     </Screen>
   );
 }

@@ -144,3 +144,57 @@
 
 /* reserve space for the fixed mobile CallBar (matches the jokes/game pages) */
 .content-page .pt-mobile { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+
+/* ------------------------------------------------------------------
+   Sitewide footer "Learn More" links (docs/seo_pages.md). Rendered by
+   SiteFooter above the DS Footer on EVERY page, so the nine content
+   pages are reachable + crawlable from anywhere. Existing tokens only;
+   theme-aware via --color-*; single column on mobile, two from 560px.
+   ------------------------------------------------------------------ */
+.cm-footer-links {
+  width: min(100%, 760px);
+  margin-inline: auto;
+  padding: var(--space-8) var(--space-5) var(--space-6);
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  text-align: center;
+}
+.cm-footer-links__title {
+  margin: 0;
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug, 1.25);
+  color: var(--color-text);
+}
+.cm-footer-links__intro {
+  margin: 0;
+  max-width: 52ch;
+  font-size: var(--text-sm);
+  line-height: var(--leading-body);
+  color: var(--color-text-muted);
+}
+.cm-footer-links__list {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  gap: var(--space-2);
+  text-align: left;
+}
+@media (min-width: 560px) {
+  .cm-footer-links__list { grid-template-columns: 1fr 1fr; }
+}
+.cm-footer-links__item {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--cm-red-hover);
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.cm-footer-links__item:hover { border-color: var(--cm-red-hover); color: var(--cm-red); }

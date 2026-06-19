@@ -1,5 +1,45 @@
 # Changelog
 
+## Persistent footer "Learn More" links + sitemap confirmation (June 19, 2026)
+
+Made all nine SEO content pages reachable from every page and confirmed the
+sitemap, per `docs/seo_pages.md`.
+
+- **Sitewide footer "Learn More" block** — new `SiteFooter`
+  (`src/components/shared/SiteFooter.jsx`) bundles the content file's "Learn
+  More" links block (`FooterLinks.jsx`) directly above the shared DS Footer, and
+  now renders on **every** page: the home page, `/game`, `/jokes` and all nine
+  content pages (the game page previously had no footer). The block reproduces
+  the file's exact anchor text, paths and order for all nine pages, so they are
+  reachable — and crawlable — from anywhere. Styled with existing tokens only
+  (`.cm-footer-links`), correct in both themes and at 375px.
+- **Sitemap** already emits all nine content URLs as absolute
+  `https://cheatmealshoib.com` links with a build-date `<lastmod>` (12 URLs
+  total) from the single `_reference/routes.mjs` source; the static
+  `public/sitemap.xml` fallback was refreshed to match (it was stale at 3 URLs).
+  Canonical host form (https, apex non-www) verified consistent across every
+  entry.
+- The home page's duplicate links block was removed in favour of the persistent
+  footer; each content page's in-article cross-links (the file's per-page
+  "Internal Links": Menu / Order Online / related pages) remain, re-titled
+  "Related pages" to distinguish them from the footer block.
+
+## SEO Content Pages
+
+Added a focused set of static SEO content pages for CheatMeals Regina:
+
+- Jain & Swaminarayan Food in Regina
+- What Is an Indian Burger?
+- Vegetarian Burgers & Indian Fast Food in Regina
+- About CheatMeals
+- Indian Frankies in Regina
+- Indian Sand-Witches in Regina
+- Loaded Fries & Indian Chaska Fries in Regina
+- Paneer Burgers in Regina
+- Aloo Tikki Burgers in Regina
+
+Also added FAQPage JSON-LD where applicable, sitemap entries, and internal footer links for crawlability.
+
 ## SEO content pages — shared layout + 9 routes (June 18, 2026)
 
 A search-demand-driven content build: a reusable long-form content-page layout

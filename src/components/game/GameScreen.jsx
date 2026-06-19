@@ -2,6 +2,7 @@ import React from 'react';
 import { Screen } from '../shared/Screen.jsx';
 import { Nav } from '../shared/Nav.jsx';
 import { CallBar } from '../shared/CallBar.jsx';
+import { SiteFooter } from '../shared/SiteFooter.jsx';
 import { PieceSVG, ClawGlyph, SpeakerGlyph, SketchArrow } from './GamePieces.jsx';
 import { ThemeAsset } from '../shared/ThemeAsset.jsx';
 import { createGameSound } from './sound.js';
@@ -523,6 +524,7 @@ export function GameScreen({ mobile }) {
         </header>
         <PattyStacker W={W} H={H} />
       </main>
+      <SiteFooter />
       {mobile ? <CallBar /> : null}
     </Screen>
   );

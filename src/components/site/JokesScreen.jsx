@@ -2,11 +2,11 @@ import React from 'react';
 import { Screen } from '../shared/Screen.jsx';
 import { Nav } from '../shared/Nav.jsx';
 import { CallBar } from '../shared/CallBar.jsx';
+import { SiteFooter } from '../shared/SiteFooter.jsx';
 import { loadJokes } from '../../lib/data.js';
 import { ensureIndicFonts } from '../../lib/indicFonts.js';
 
 const DS = window.CheatMealsDesignSystem_e4e564;
-const data = window.CM_DATA;
 
 /* lang → Indic script. Latin ('en') is absent on purpose so English + all
    chrome keep the brand fonts. Adding a script later is one entry here plus
@@ -64,7 +64,7 @@ function pickJoke(pool, seenTexts, avoidText) {
 }
 
 export function JokesScreen({ mobile }) {
-  const { SectionHeader, Button, Icon, Footer } = DS;
+  const { SectionHeader, Button, Icon } = DS;
 
   const [jokes, setJokes] = React.useState(seedJokes);
   const [seen, setSeen] = React.useState(readSeen);
@@ -241,12 +241,7 @@ export function JokesScreen({ mobile }) {
         </div>
       </main>
       {mobile ? <CallBar /> : null}
-      <Footer
-        logoSrc="/assets/logos/cheatmeals-primary-inverse.svg"
-        address={data.address + ', ' + data.city}
-        phone={data.phone}
-        socials={false}
-      />
+      <SiteFooter />
     </Screen>
   );
 }

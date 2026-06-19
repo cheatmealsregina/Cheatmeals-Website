@@ -2,26 +2,81 @@
 <!-- FALLBACK ONLY. The live sitemap is generated at build time by
      _reference/gen-sitemap.mjs (from _reference/routes.mjs) and overwrites this
      copy in dist/ with a fresh <lastmod>. This static file is served only if
-     that generation step is skipped. To change routes, edit routes.mjs.
+     that generation step is skipped, so it's kept in sync with routes.mjs by
+     hand. To change routes, edit routes.mjs (this file then mirrors it).
      The menu/about/team/visit "pages" are anchor sections on / (/#menu, …),
      not separate URLs, so they are not listed. /admin is excluded by design. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://cheatmealshoib.com/</loc>
-    <lastmod>2026-06-18</lastmod>
+    <lastmod>2026-06-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://cheatmealshoib.com/game</loc>
-    <lastmod>2026-06-18</lastmod>
+    <lastmod>2026-06-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://cheatmealshoib.com/jokes</loc>
-    <lastmod>2026-06-18</lastmod>
+    <lastmod>2026-06-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://cheatmealshoib.com/jain-swaminarayan-food-regina</loc>
+    <lastmod>2026-06-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cheatmealshoib.com/what-is-an-indian-burger</loc>
+    <lastmod>2026-06-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cheatmealshoib.com/vegetarian-burgers-regina</loc>
+    <lastmod>2026-06-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cheatmealshoib.com/about</loc>
+    <lastmod>2026-06-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cheatmealshoib.com/frankies-regina</loc>
+    <lastmod>2026-06-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cheatmealshoib.com/indian-sandwiches-regina</loc>
+    <lastmod>2026-06-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cheatmealshoib.com/loaded-fries-regina</loc>
+    <lastmod>2026-06-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cheatmealshoib.com/paneer-burgers-regina</loc>
+    <lastmod>2026-06-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://cheatmealshoib.com/aloo-burgers-regina</loc>
+    <lastmod>2026-06-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>

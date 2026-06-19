@@ -1,13 +1,13 @@
 import React from 'react';
 import { Screen } from '../shared/Screen.jsx';
 import { Nav } from '../shared/Nav.jsx';
-import { LearnMore } from '../content/LearnMore.jsx';
+import { SiteFooter } from '../shared/SiteFooter.jsx';
 
 const DS = window.CheatMealsDesignSystem_e4e564;
 const data = window.CM_DATA;
 
 export function VisitScreen({ mobile, showNav = true }) {
-  const { SectionHeader, Button, Icon, HoursTable, SocialButtons, Footer } = DS;
+  const { SectionHeader, Button, Icon, HoursTable, SocialButtons } = DS;
   const mapsUrl =
     'https://www.google.com/maps/search/?api=1&query=' +
     encodeURIComponent(data.address + ', ' + data.city);
@@ -53,19 +53,12 @@ export function VisitScreen({ mobile, showNav = true }) {
           </a>
         </div>
       </div>
-      <div className="pt-section">
-        <LearnMore showMenu={false} />
-      </div>
-      <Footer
-        logoSrc="/assets/logos/cheatmeals-primary-inverse.svg"
-        address={data.address + ', ' + data.city}
-        phone={data.phone}
+      <SiteFooter
         note={
           <a href={data.instagramUrl} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>
             Fell in love with us? Follow on Insta →
           </a>
         }
-        socials={false}
       />
     </Screen>
   );

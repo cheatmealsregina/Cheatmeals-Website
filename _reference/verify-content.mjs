@@ -179,6 +179,18 @@ async function main() {
       if (home.includes('href="' + r.path + '"')) good('home links to ' + r.path); else bad('home MISSING link to ' + r.path);
     }
 
+    console.log('\n=== E) persistent footer "Learn More" block reachable from EVERY page ===\n');
+    // Every prerendered page (home, game, jokes + all content pages) must carry
+    // the sitewide footer block, with links to all nine content pages.
+    const FOOTER_PAGES = ['/', '/game', '/jokes', ...CONTENT_ROUTES.map((r) => r.path)];
+    for (const p of FOOTER_PAGES) {
+      const html = await readPage(p);
+      const hasBlock = html.includes('cm-footer-links') && /Learn More/.test(html);
+      const linked = CONTENT_ROUTES.filter((cp) => html.includes('href="' + cp.path + '"')).length;
+      if (hasBlock && linked === CONTENT_ROUTES.length) good(p.padEnd(34) + ` footer block + all ${linked} content links`);
+      else bad(p.padEnd(34) + ` footer block=${hasBlock} content links=${linked}/${CONTENT_ROUTES.length}`);
+    }
+
     console.log('\n=== D) no dead internal links (every href resolves) ===\n');
     // Valid anchor ids come from the home page (where /#x anchors point).
     const homeIds = new Set([...home.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
