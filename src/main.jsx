@@ -8,6 +8,7 @@ import { bumpDataVersion } from './lib/liveData.js';
 import './styles/unify.css';
 import './styles/v2.css';
 import './styles/app.css';
+import './styles/content.css';
 
 /* The design-system bundle (public/_ds/.../_ds_bundle.js) references the
    global React — some components (Icon) at definition time. Expose the
@@ -46,6 +47,7 @@ async function loadRouteComponent(key) {
   if (key === 'game') return (await import('./components/game/GameScreen.jsx')).GameScreen;
   if (key === 'jokes') return (await import('./components/site/JokesScreen.jsx')).JokesScreen;
   if (key === 'admin') return (await import('./components/admin/AdminScreens.jsx')).AdminApp;
+  if (key === 'content') return (await import('./components/content/ContentRouter.jsx')).ContentRouter;
   return null;
 }
 

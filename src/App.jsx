@@ -73,6 +73,10 @@ export default function App({ routeComponent: RouteComponent = null, hydrating =
      The fallback only shows if that preload was skipped (it never is in the
      normal boot path). */
   if (!RouteComponent) return <RouteFallback />;
-  const cls = key === 'game' ? 'game-page' : key === 'jokes' ? 'jokes-page' : 'admin-page';
+  const cls =
+    key === 'game' ? 'game-page'
+    : key === 'jokes' ? 'jokes-page'
+    : key === 'content' ? 'content-page'
+    : 'admin-page';
   return <div className={cls}><RouteComponent mobile={mobile} /></div>;
 }

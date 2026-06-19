@@ -1,0 +1,146 @@
+/* ============================================================
+   Long-form content pages (/about, /what-is-an-indian-burger,
+   /vegetarian-burgers-regina, /jain-swaminarayan-food-regina).
+   Reuses the site's existing tokens + DS components — no new
+   design tokens, no global element restyling. Theme-aware via
+   the --color-* aliases; mobile via the shared .pt-mobile scale.
+   ============================================================ */
+
+/* readable column on the standard .pt-section scaffold */
+.cm-content__head {
+  width: min(100%, 720px);
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-4);
+  justify-items: center;
+  text-align: center;
+}
+.cm-content__lead {
+  margin: 0;
+  max-width: 60ch;
+  font-size: var(--text-lg);
+  line-height: var(--leading-body);
+  color: var(--color-text-muted);
+}
+
+.cm-content__prose {
+  width: min(100%, 680px);
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-8);
+}
+.cm-content__section { display: grid; gap: var(--space-3); }
+.cm-content__h2 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  line-height: var(--leading-snug, 1.25);
+  color: var(--color-text);
+}
+.cm-content__prose p {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  color: var(--color-text);
+}
+.cm-content__prose p + p { margin-top: var(--space-3); }
+.cm-content__prose a {
+  color: var(--cm-red-hover);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.cm-content__prose a:hover { color: var(--cm-red); }
+.cm-content__prose ul {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  color: var(--color-text);
+}
+.cm-content__prose li::marker { color: var(--cm-red); }
+
+/* FAQ — styled native <details> disclosure (answers stay in the DOM, so they
+   prerender and remain crawlable even when collapsed) */
+.cm-faq { width: 100%; display: grid; gap: var(--space-4); }
+.cm-faq__list { display: grid; gap: var(--space-2); }
+.cm-faq__item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+.cm-faq__q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-base);
+  line-height: var(--leading-snug, 1.3);
+  color: var(--color-text);
+  cursor: pointer;
+  list-style: none;
+}
+.cm-faq__q::-webkit-details-marker { display: none; }
+.cm-faq__chev {
+  color: var(--cm-red);
+  flex: none;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.cm-faq__item[open] .cm-faq__chev { transform: rotate(180deg); }
+.cm-faq__a { padding: 0 var(--space-5) var(--space-4); }
+.cm-faq__a p {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-body);
+  color: var(--color-text-muted);
+}
+
+/* "Learn more" cross-links (content pages + home). Lives inside a .pt-section
+   in both contexts, so it needs no outer padding — just centring + a divider. */
+.cm-learnmore {
+  width: min(100%, 680px);
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+.cm-learnmore__title { margin: 0; color: var(--color-text-muted); }
+.cm-learnmore__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.cm-learnmore__item {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  min-height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: 600;
+  color: var(--cm-red-hover);
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.cm-learnmore__item:hover { border-color: var(--cm-red-hover); color: var(--cm-red); }
+
+/* closing call-to-action row */
+.cm-content__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+/* standalone dietary-definition line (verbatim copy, set off from the prose) */
+.cm-content__prose .cm-content__def {
+  font-weight: 600;
+  font-size: var(--text-lg);
+  color: var(--color-text);
+  padding-left: var(--space-4);
+  border-left: 3px solid var(--cm-red);
+}
+
+/* reserve space for the fixed mobile CallBar (matches the jokes/game pages) */
+.content-page .pt-mobile { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }

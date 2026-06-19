@@ -1,5 +1,49 @@
 # Changelog
 
+## SEO content pages — shared layout + 9 routes (June 18, 2026)
+
+A search-demand-driven content build: a reusable long-form content-page layout
+plus nine prerendered, interlinked routes — genuinely useful, distinct pages
+(not thin marketing or boilerplate with the noun swapped). Copy, metadata, FAQs
+and dietary definitions are reproduced verbatim from the owner-confirmed spec in
+`docs/seo_pages.md`.
+
+- **New routes** (all prerendered to real static HTML and listed in the
+  sitemap): `/jain-swaminarayan-food-regina`, `/what-is-an-indian-burger`,
+  `/vegetarian-burgers-regina`, `/about` (Our Story), `/frankies-regina`,
+  `/indian-sandwiches-regina`, `/loaded-fries-regina`, `/paneer-burgers-regina`,
+  `/aloo-burgers-regina`. Sitemap is now 12 URLs.
+- **Reusable layout** (`src/components/content/ContentPage.jsx`) matching the
+  site exactly — shared Nav, brand `SectionHeader` (display title, stars, dotted
+  rules), a readable prose column, the mobile CallBar and the shared Footer —
+  plus `ContentSection` (display-font subheadings) and a styled `Faq` block
+  (native `<details>`, so answers prerender and stay crawlable). Theme-aware and
+  mobile-correct using only existing tokens (`src/styles/content.css`); no new
+  global styles.
+- **Per-page FAQ + FAQPage JSON-LD**: the eight non-About pages each render an
+  FAQ and emit schema.org `FAQPage` structured data generated from the *same*
+  FAQ array they display, so the JSON-LD always matches the visible answers
+  word-for-word (`buildFaqSchema` in `routeHead.js`). `/about` has no FAQ and
+  correctly emits none.
+- **Single 'content' render key + registry**: `src/lib/contentRoutes.js` holds
+  each page's path + SEO title/description/H1 + FAQ + curated cross-links;
+  `ContentRouter.jsx` dispatches by path; `routeHead.js`/`main.jsx`/`App.jsx`
+  wire the key; `_reference/routes.mjs` carries the same paths so the prerender +
+  sitemap can't drift.
+- **Internal links mapped to real destinations** (`src/lib/siteLinks.js`): Menu
+  → `/#menu`, Order Online → the Call-to-Order action (`tel:` — there is no
+  online-ordering page), Location/Contact → `/#visit`. Every content page
+  cross-links related pages + the Menu; a "Learn more" block links all nine from
+  the home page (so they're crawlable from the main entry). No dead links, no
+  invented routes.
+- Verified by `_reference/verify-content.mjs`: real prerendered text, distinct
+  per-page title/description/self-canonical, valid `FAQPage` JSON-LD matching the
+  rendered FAQ verbatim, the Jain/Swaminarayan dietary definitions and
+  egg/eggless-sauce statements reproduced word-for-word, every `<a href>`
+  resolves (no dead links), a unique per-page signature line that appears only on
+  its own page (proving the nine are genuinely distinct), clean hydration in
+  light + dark at 375px, and the home page linking to all nine.
+
 ## Build-time sitemap, route source-of-truth & structured-data finish (June 18, 2026)
 
 A follow-up SEO pass that makes the crawl config self-maintaining and completes

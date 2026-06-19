@@ -1,6 +1,7 @@
 import React from 'react';
 import { Screen } from '../shared/Screen.jsx';
 import { Nav } from '../shared/Nav.jsx';
+import { LearnMore } from '../content/LearnMore.jsx';
 
 const DS = window.CheatMealsDesignSystem_e4e564;
 const data = window.CM_DATA;
@@ -51,6 +52,9 @@ export function VisitScreen({ mobile, showNav = true }) {
             </span>
           </a>
         </div>
+      </div>
+      <div className="pt-section">
+        <LearnMore showMenu={false} />
       </div>
       <Footer
         logoSrc="/assets/logos/cheatmeals-primary-inverse.svg"

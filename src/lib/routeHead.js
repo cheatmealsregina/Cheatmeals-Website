@@ -13,6 +13,8 @@
  * page load (the nav uses real <a href> links, no client router), so this runs
  * once per load. /admin is marked noindex (robots.txt disallows it too). */
 
+import { isContentPath, contentRouteFor } from './contentRoutes.js';
+
 const ORIGIN = 'https://cheatmealshoib.com';
 const OG_IMAGE = ORIGIN + '/assets/og-image.png';
 const OG_IMAGE_ALT = 'CheatMeals — Indian burgers and Desi street food in Regina';
@@ -47,6 +49,7 @@ export function renderKey(path) {
   if (path.startsWith('/game')) return 'game';
   if (path.startsWith('/jokes')) return 'jokes';
   if (path.startsWith('/admin')) return 'admin';
+  if (isContentPath(path)) return 'content';
   return 'site';
 }
 
@@ -151,6 +154,21 @@ function buildRestaurantSchema() {
   return schema;
 }
 
+/* FAQPage structured data, built from the SAME faq array the page renders, so
+   the JSON-LD answers always match the visible answers (Google's requirement). */
+function buildFaqSchema(faq) {
+  if (!faq || !faq.length) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
+}
+
 function setJsonLd(obj) {
   let el = document.head.querySelector('script#cm-jsonld');
   if (!obj) { if (el) el.remove(); return; }
@@ -196,8 +214,21 @@ export function applyRouteHead(path) {
     setJsonLd(null);
     return;
   }
-  applyPage(META[key]);
+  /* Content pages resolve their per-path metadata from the content registry;
+     every other route uses the static META table. */
+  let meta;
+  let jsonLd = null;
+  if (key === 'content') {
+    const r = contentRouteFor(path);
+    meta = r ? { url: ORIGIN + r.path, title: r.title, description: r.description } : META.site;
+    /* Content pages carry FAQPage structured data when they have an FAQ. */
+    if (r) jsonLd = buildFaqSchema(r.faq);
+  } else {
+    meta = META[key];
+    /* Restaurant structured data belongs on the business's main page only. */
+    if (key === 'site') jsonLd = buildRestaurantSchema();
+  }
+  applyPage(meta);
   setRobots(null); // ensure indexable (no stale noindex from a prior route)
-  /* Restaurant structured data belongs on the business's main page only. */
-  setJsonLd(key === 'site' ? buildRestaurantSchema() : null);
+  setJsonLd(jsonLd);
 }
