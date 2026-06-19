@@ -138,6 +138,7 @@ function buildRestaurantSchema() {
       streetAddress: d.address,
       addressLocality: locality || 'Regina',
       addressRegion: region || 'SK',
+      postalCode: 'S4T 4M8',
       addressCountry: 'CA',
     },
     geo: { '@type': 'GeoCoordinates', latitude: GEO.latitude, longitude: GEO.longitude },

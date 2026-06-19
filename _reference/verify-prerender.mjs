@@ -115,6 +115,7 @@ async function phaseA() {
         try {
           const o = JSON.parse(ld);
           (o['@type'] === 'Restaurant' && o.address && o.telephone ? good : bad)('JSON-LD @type=Restaurant w/ address + telephone');
+          (o.address && o.address.postalCode && o.address.streetAddress ? good : bad)('JSON-LD address has streetAddress + postalCode');
           (Array.isArray(o.openingHoursSpecification) && o.openingHoursSpecification.length ? good : bad)('JSON-LD openingHoursSpecification present');
           (Array.isArray(o.servesCuisine) && o.servesCuisine.length ? good : bad)('JSON-LD servesCuisine present');
           (o.geo && typeof o.geo.latitude === 'number' && typeof o.geo.longitude === 'number' ? good : bad)('JSON-LD geo coordinates present');
