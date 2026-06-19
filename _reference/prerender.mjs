@@ -25,17 +25,16 @@ import { readFile } from 'fs/promises';
 import { existsSync, mkdirSync, writeFileSync, statSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { PUBLIC_ROUTES } from './routes.mjs';
 
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
 const PORT = 4319;
 const BASE = `http://localhost:${PORT}`;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const ROUTES = [
-  { path: '/', key: 'site', out: 'index.html', ready: '#visit' },
-  { path: '/game', key: 'game', out: 'game/index.html', ready: '.stk-board' },
-  { path: '/jokes', key: 'jokes', out: 'jokes/index.html', ready: '.cm-joke-card__text' },
-];
+// Public routes only (shared with the sitemap generator). /admin is absent by
+// design — it must never be prerendered.
+const ROUTES = PUBLIC_ROUTES;
 
 const EDGE_PATHS = [
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',

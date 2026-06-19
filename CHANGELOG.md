@@ -1,5 +1,36 @@
 # Changelog
 
+## Build-time sitemap, route source-of-truth & structured-data finish (June 18, 2026)
+
+A follow-up SEO pass that makes the crawl config self-maintaining and completes
+the Restaurant structured data. Verified end-to-end by an adversarial multi-agent
+audit (robots/sitemap/noindex/canonical) plus the prerender + hydration harness.
+
+- **Sitemap is now generated at build time** — `_reference/gen-sitemap.mjs` runs
+  between `vite build` and the prerender (`vite build && node …/gen-sitemap.mjs &&
+  node …/prerender.mjs`) and writes `dist/sitemap.xml` from the canonical route
+  list with absolute `https://cheatmealshoib.com` URLs and a fresh `<lastmod>`
+  (the build date), so it can never go stale. `public/sitemap.xml` stays as a
+  static fallback (served only if generation is skipped; the step is non-fatal).
+- **Single source of truth for public routes** — `_reference/routes.mjs`
+  (`PUBLIC_ROUTES`) is consumed by BOTH the prerenderer and the sitemap
+  generator, so "what routes exist" is defined once and the two can't drift.
+  `/admin` is deliberately absent, so it can never be prerendered, listed in the
+  sitemap, or indexed.
+- **Canonical host reaffirmed** as `https://cheatmealshoib.com` (https, apex
+  non-www, no trailing slash except the bare homepage) across `routes.mjs`,
+  `routeHead.js`, `index.html`, the sitemap, and the robots `Sitemap:` line —
+  audited consistent, with each prerendered route self-canonicalising to a
+  distinct URL.
+- **`README.md`** added, documenting how to regenerate the sitemap when routes
+  change (edit `routes.mjs`, then `npm run build` — no hand-edited XML).
+- **Restaurant JSON-LD completed:** added `geo` coordinates (50.455278,
+  −104.642571 for 4306 Dewdney Ave), the owner-verified `postalCode` **S4T 1A8**,
+  set `priceRange` to `$`, and added `Street Food` to `servesCuisine`
+  (`["Indian","Burgers","Street Food"]`).
+- `public/robots.txt` was already correct (`Allow: /`, `Disallow: /admin`,
+  `Sitemap:` pointer) and is unchanged.
+
 ## Per-route titles, descriptions, canonicals & social cards (June 17, 2026)
 
 Each indexable route now has its own descriptive metadata, baked into the
@@ -26,8 +57,8 @@ single source of truth, applied during the prerender snapshot.
   data so it always matches the visible NAP + hours: `@type` Restaurant, address
   (4306 Dewdney Avenue, Regina, SK, CA), telephone, `openingHoursSpecification`
   (Mon–Sun 11:00–21:00), `servesCuisine` (Indian, Burgers), `priceRange`,
-  `hasMenu`, and `sameAs` the Instagram. (`geo` is intentionally omitted until
-  exact coordinates are supplied — no placeholder.)
+  `hasMenu`, and `sameAs` the Instagram. (`geo`, exact `postalCode`, the `$`
+  price band and the "Street Food" cuisine were completed in the June 18 pass.)
 - **Refinements from an adversarial SEO audit:** removed forced "Regina" from
   the /game leaderboard copy (geo-forcing); gave /jokes a real `<h1>` (it was
   shipping only an `<h2>`); lightened the /jokes title to drop the off-topic
