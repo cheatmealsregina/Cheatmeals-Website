@@ -9,11 +9,15 @@ heights (light + dark):
 - **Gameplay area shortened / stack base hidden behind the CallBar.** The
   `useStageHeight` floor (`Math.max(340, …)`) forced a too-tall stage on shorter
   phones, pushing the stack's base behind the fixed bottom CallBar and below the
-  fold. Trimmed the mobile chrome above the stage (`.pt-mobile .stk-page`, ~64px
-  reclaimed) and rewrote the height calc to honestly subtract chrome + CallBar
-  with a 266px floor (the minimum that keeps the world-scroll `off` at 0 so the
-  base stays on-screen). The stage now sits fully above the CallBar across
-  640–900px-tall phones (e.g. 360×640: stage bottom 542 < CallBar top 567).
+  fold. Trimmed the mobile chrome above the stage (smaller title/subtitle +
+  tighter `.pt-mobile .stk-page` padding, ~100px reclaimed) and replaced the
+  magic-number height calc with a **measured fit**: `useLayoutEffect` reads the
+  real gap between the top of the stage and the top of the actual CallBar, so the
+  playfield always uses the full available height and auto-adapts to the chrome
+  and to the CallBar's safe-area inset on notched phones (floor 266 keeps the
+  world-scroll `off` at 0 so the base stays on-screen; cap 640). The stage is now
+  much taller and sits 8px above the CallBar on every phone (360×640: 266→**317**
+  px; 390×844: 420→**521** px).
 - **High-score / game-over card not visible.** The card is taller than a short
   stage and was clipped by the stage's `overflow:hidden`, hiding the art and the
   Save / Stack-Again buttons. Made the `.stk-over` overlay scrollable

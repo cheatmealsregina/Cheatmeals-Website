@@ -139,11 +139,13 @@
 .stk-title__script { font-size: 0.55em; color: var(--color-text-muted); }
 .stk-sub { margin: 0; color: var(--color-text-muted); }
 
-/* Mobile: trim the chrome above the stage so the whole playfield fits above the
-   fixed-bottom CallBar (useStageHeight in GameScreen subtracts this chrome).
-   Scoped to .pt-mobile so desktop padding/gap are untouched. */
-.pt-mobile .stk-page { padding-top: var(--space-5); gap: var(--space-4); }
+/* Mobile: trim the chrome above the stage so the playfield gets the most height
+   possible above the fixed-bottom CallBar (GameScreen measures the real gap).
+   Scoped to .pt-mobile so the desktop header is untouched. */
+.pt-mobile .stk-page { padding-top: var(--space-3); gap: var(--space-3); }
 .pt-mobile .stk-head { gap: var(--space-1, 4px); }
+.pt-mobile .stk-title { font-size: clamp(28px, 7vw, 40px); }
+.pt-mobile .stk-sub { font-size: var(--text-sm); }
 
 .stk-col { display: grid; gap: var(--space-5); justify-items: center; }
 

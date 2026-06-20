@@ -501,22 +501,32 @@ function useStageWidth(mobile) {
   return w;
 }
 
-/* On mobile a fixed-bottom CallBar covers the lower ~84px of the viewport, and
-   the page chrome above the stage (nav + trimmed title row) is ~284px. Size the
-   stage to the room that's actually left (viewport − chrome − call bar) so the
-   whole playfield — including the stack's base — sits clear of the bar. The
-   subtractor (380 = ~284 chrome + ~96 call bar incl. a safe-area buffer) keeps
-   the stage above the bar; the 266 floor is the minimum that still lets the
-   world-scroll keep `off` at 0 with the base on screen (see PattyStacker). The
-   physics read H, so a shorter stage just scrolls sooner. */
+/* Mobile stage height: instead of guessing the chrome with a magic constant,
+   MEASURE the real gap between the top of the stage and the top of the fixed
+   CallBar, so the playfield always uses the full available height (and so it
+   auto-adapts to the nav/title chrome and to the CallBar's safe-area inset on
+   notched phones). Floor 266 keeps the world-scroll `off` at 0 so the stack base
+   stays on screen; cap 640 stops it getting silly on very tall phones. The
+   physics read H, so a taller stage just scrolls later. Desktop is a fixed 560. */
 function useStageHeight(mobile) {
-  const calc = () => (mobile ? Math.max(266, Math.min(540, window.innerHeight - 380)) : 560);
-  const [h, setH] = React.useState(calc);
-  React.useEffect(() => {
-    const onResize = () => setH(calc());
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+  const [h, setH] = React.useState(() => {
+    if (!mobile) return 560;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    return Math.max(266, Math.min(640, vh - 320)); // rough first paint; refined below
+  });
+  React.useLayoutEffect(() => {
+    if (!mobile) { setH(560); return; }
+    const measure = () => {
+      const stage = document.querySelector('.stk-stage');
+      const top = stage ? stage.getBoundingClientRect().top : 230;
+      const cb = document.querySelector('.pt-callbar');
+      const limit = cb ? cb.getBoundingClientRect().top : window.innerHeight - 84;
+      const avail = Math.round(limit - top - 8); // 8px breathing gap above the bar
+      setH(Math.max(266, Math.min(640, avail)));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
   }, [mobile]);
   return h;
 }
