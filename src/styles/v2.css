@@ -147,6 +147,40 @@
 .pt-mobile .stk-title { font-size: clamp(28px, 7vw, 40px); }
 .pt-mobile .stk-sub { font-size: var(--text-sm); }
 
+/* Immersive full-screen play (mobile): a fixed overlay with just the stage and a
+   close button — maximum playfield, locked height (no address-bar jitter). The
+   .stk-page.stk-page--immersive selector outranks .pt-mobile .stk-page. */
+.stk-page.stk-page--immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  margin: 0;
+  padding: calc(var(--space-2) + env(safe-area-inset-top)) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  overflow: hidden;
+}
+.stk-close {
+  align-self: flex-end;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.stk-close:hover { border-color: var(--cm-red); color: var(--cm-red); }
+
 .stk-col { display: grid; gap: var(--space-5); justify-items: center; }
 
 .stk-stage {

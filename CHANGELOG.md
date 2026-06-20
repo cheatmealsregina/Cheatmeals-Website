@@ -1,5 +1,28 @@
 # Changelog
 
+## Immersive full-screen Patty Stacker on mobile (June 19, 2026)
+
+Replaced the address-bar-jittery resizing stage with an explicit immersive mode:
+
+- **Tap-to-play goes full-screen.** On mobile, starting the game expands the
+  stage into a fixed, full-screen playfield (`.stk-page--immersive`) with just
+  the stage and a **close (✕) button top-right** — the nav, title, footer,
+  CallBar and leaderboard are hidden for maximum play area (e.g. the stage grows
+  from ~521px to ~776px on a 390×844 phone). The close button returns to the
+  normal page and resets the game.
+- **No more height jitter.** The immersive height is measured once and **locked**
+  — it only re-fits on orientation change, not on every `resize`, so the mobile
+  address bar showing/hiding no longer resizes the playfield mid-play. (Body
+  scroll is locked while immersive.)
+- **High-score card fully visible.** Because the immersive stage is tall, the
+  game-over / high-score-entry card (incl. the Save button) now fits without any
+  scrolling.
+- Fixed a **web-font race** in the height measurement: it now re-measures on
+  `document.fonts.ready`, so the brand fonts loading late can't leave the
+  contained stage slightly too tall (slipping behind the CallBar).
+
+Desktop and both themes unaffected; verify-prerender ALL PASS (clean hydration).
+
 ## Fix mobile Patty Stacker (/game) layout + multiplier attainability (June 19, 2026)
 
 Three mobile-only `/game` issues, diagnosed with a headless reproduction + an

@@ -141,7 +141,7 @@ function StackerBoard({ board }) {
   );
 }
 
-function PattyStacker({ W = 360, H = 560 }) {
+function PattyStacker({ W = 360, H = 560, immersive = false, onStart }) {
   const { Icon, Pennant } = DS;
   const [mode, setMode] = React.useState(() => {
     try { return localStorage.getItem('cm-stacker-howto') ? 'idle' : 'howto'; } catch (e) { return 'howto'; }
@@ -227,6 +227,7 @@ function PattyStacker({ W = 360, H = 560 }) {
     setStack([]); setSlices([]); setStars([]); setDropping(null); setCutFx(null);
     setScore(0); setStreak(0); setPieceIdx(0); setSaved(false);
     setMode('play');
+    if (onStart) onStart(); /* go full-screen immersive (mobile) on play */
   };
 
   /* Drop = a real fall, then a commit. The piece releases from the arm's
@@ -481,7 +482,7 @@ function PattyStacker({ W = 360, H = 560 }) {
         {mode === 'entry' ? <GameOverCard score={score} entry onSave={saveScore} /> : null}
         {mode === 'over' ? <GameOverCard score={score} saved={saved} onAgain={start} /> : null}
       </div>
-      <StackerBoard board={board} />
+      {!immersive && <StackerBoard board={board} />}
     </div>
   );
 }
@@ -489,26 +490,30 @@ function PattyStacker({ W = 360, H = 560 }) {
 /* The stage coordinate system is in absolute px, so the stage box width must
    match the viewport or the right edge of the playfield clips on small phones.
    Track it and recompute on resize/orientation change. */
-function useStageWidth(mobile) {
-  const calc = () => (mobile ? Math.min(343, window.innerWidth - 32) : 360);
+function useStageWidth(mobile, immersive) {
+  const calc = () => {
+    if (!mobile) return 360;
+    return immersive ? Math.min(440, window.innerWidth - 16) : Math.min(343, window.innerWidth - 32);
+  };
   const [w, setW] = React.useState(calc);
   React.useEffect(() => {
     const onResize = () => setW(calc());
     onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [mobile]);
+  }, [mobile, immersive]);
   return w;
 }
 
-/* Mobile stage height: instead of guessing the chrome with a magic constant,
-   MEASURE the real gap between the top of the stage and the top of the fixed
-   CallBar, so the playfield always uses the full available height (and so it
-   auto-adapts to the nav/title chrome and to the CallBar's safe-area inset on
-   notched phones). Floor 266 keeps the world-scroll `off` at 0 so the stack base
-   stays on screen; cap 640 stops it getting silly on very tall phones. The
-   physics read H, so a taller stage just scrolls later. Desktop is a fixed 560. */
-function useStageHeight(mobile) {
+/* Mobile stage height: MEASURE the real space rather than guessing the chrome.
+   - Contained view: fit between the top of the stage and the top of the fixed
+     CallBar, so the whole playfield (incl. the base) sits above the bar.
+   - Immersive view (after tap-to-play): fill the screen from the stage top to
+     the bottom, and LOCK it — re-fit only on orientation change, NOT on every
+     resize, so the mobile address bar showing/hiding can't jitter the height.
+   Floor keeps the world-scroll `off` at 0 so the base stays on screen. Desktop
+   is a fixed 560. */
+function useStageHeight(mobile, immersive) {
   const [h, setH] = React.useState(() => {
     if (!mobile) return 560;
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
@@ -519,36 +524,74 @@ function useStageHeight(mobile) {
     const measure = () => {
       const stage = document.querySelector('.stk-stage');
       const top = stage ? stage.getBoundingClientRect().top : 230;
-      const cb = document.querySelector('.pt-callbar');
-      const limit = cb ? cb.getBoundingClientRect().top : window.innerHeight - 84;
-      const avail = Math.round(limit - top - 8); // 8px breathing gap above the bar
-      setH(Math.max(266, Math.min(640, avail)));
+      if (immersive) {
+        const avail = Math.round(window.innerHeight - top - 12); // fill to the bottom
+        setH(Math.max(320, Math.min(1000, avail)));
+      } else {
+        const cb = document.querySelector('.pt-callbar');
+        const limit = cb ? cb.getBoundingClientRect().top : window.innerHeight - 84;
+        const avail = Math.round(limit - top - 8); // 8px breathing gap above the bar
+        setH(Math.max(266, Math.min(640, avail)));
+      }
     };
     measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [mobile]);
+    /* Re-measure once web fonts load: the title/header height (hence the stage's
+       top) grows when the brand fonts swap in, which would otherwise leave this
+       one-shot measurement too tall (stage bottom slips behind the CallBar). */
+    let cancelled = false;
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!cancelled) measure(); });
+    /* Immersive locks against the address-bar resize jitter — only re-fit on
+       rotation; contained view stays responsive to resize. */
+    const evt = immersive ? 'orientationchange' : 'resize';
+    window.addEventListener(evt, measure);
+    return () => { cancelled = true; window.removeEventListener(evt, measure); };
+  }, [mobile, immersive]);
   return h;
 }
 
 export function GameScreen({ mobile }) {
-  const W = useStageWidth(mobile);
-  const H = useStageHeight(mobile);
+  /* Immersive full-screen play (mobile only): tapping "play" expands the stage
+     to a fixed, full-screen playfield with just a close button; closing returns
+     to the normal page (and resets the game via a remount key). */
+  const [immersive, setImmersive] = React.useState(false);
+  const [gameKey, setGameKey] = React.useState(0);
+  const W = useStageWidth(mobile, immersive);
+  const H = useStageHeight(mobile, immersive);
+
+  /* Lock body scroll while immersive so the fixed overlay is the only surface
+     (and the page behind can't scroll the address bar around). */
+  React.useEffect(() => {
+    if (!immersive) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [immersive]);
+
+  const closeImmersive = () => { setImmersive(false); setGameKey((k) => k + 1); };
+
   return (
     <Screen mobile={mobile} label={mobile ? 'While You Wait — mobile' : 'While You Wait — desktop'}>
-      <Nav mobile={mobile} active="" />
-      <main className="stk-page" id="game">
-        <header className="stk-head">
-          <span className="cm-label" style={{ color: 'var(--color-text-muted)' }}>While you wait</span>
-          <h1 className="stk-title cm-display">
-            THE <span className="cm-script stk-title__script">Patty</span> <span style={{ color: 'var(--cm-red)' }}>STACKER</span>
-          </h1>
-          <p className="stk-sub">Stack 'em while we smash 'em. Your order's coming.</p>
-        </header>
-        <PattyStacker W={W} H={H} />
+      {!immersive ? <Nav mobile={mobile} active="" /> : null}
+      <main className={'stk-page' + (immersive ? ' stk-page--immersive' : '')} id="game">
+        {immersive ? (
+          <button type="button" className="stk-close" aria-label="Close full-screen game" onClick={closeImmersive}>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        ) : (
+          <header className="stk-head">
+            <span className="cm-label" style={{ color: 'var(--color-text-muted)' }}>While you wait</span>
+            <h1 className="stk-title cm-display">
+              THE <span className="cm-script stk-title__script">Patty</span> <span style={{ color: 'var(--cm-red)' }}>STACKER</span>
+            </h1>
+            <p className="stk-sub">Stack 'em while we smash 'em. Your order's coming.</p>
+          </header>
+        )}
+        <PattyStacker key={gameKey} W={W} H={H} immersive={immersive} onStart={() => { if (mobile) setImmersive(true); }} />
       </main>
-      <SiteFooter />
-      {mobile ? <CallBar /> : null}
+      {!immersive ? <SiteFooter /> : null}
+      {mobile && !immersive ? <CallBar /> : null}
     </Screen>
   );
 }
