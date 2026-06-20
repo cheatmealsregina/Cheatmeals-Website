@@ -1,5 +1,37 @@
 # Changelog
 
+## Fix mobile Patty Stacker (/game) layout + multiplier attainability (June 19, 2026)
+
+Three mobile-only `/game` issues, diagnosed with a headless reproduction + an
+adversarial multi-agent review and verified with screenshots at multiple phone
+heights (light + dark):
+
+- **Gameplay area shortened / stack base hidden behind the CallBar.** The
+  `useStageHeight` floor (`Math.max(340, …)`) forced a too-tall stage on shorter
+  phones, pushing the stack's base behind the fixed bottom CallBar and below the
+  fold. Trimmed the mobile chrome above the stage (`.pt-mobile .stk-page`, ~64px
+  reclaimed) and rewrote the height calc to honestly subtract chrome + CallBar
+  with a 266px floor (the minimum that keeps the world-scroll `off` at 0 so the
+  base stays on-screen). The stage now sits fully above the CallBar across
+  640–900px-tall phones (e.g. 360×640: stage bottom 542 < CallBar top 567).
+- **High-score / game-over card not visible.** The card is taller than a short
+  stage and was clipped by the stage's `overflow:hidden`, hiding the art and the
+  Save / Stack-Again buttons. Made the `.stk-over` overlay scrollable
+  (`flex` + child `margin:auto`) and shrink the art on short phones, so the card
+  centres when it fits and scrolls when it doesn't — the **Save Score** button is
+  now always reachable.
+- **Multiplier "doesn't work" on mobile.** The combo math is correct (verified:
+  forced perfects give ×2→×5 with compounding points); the real problem is that
+  the flat 5px "perfect" window is unhittable with a swinging claw on a narrow
+  touch screen, so the multiplier never builds. The perfect tolerance now scales
+  with stage width (desktop W=360 → exactly 5px, unchanged; mobile → 7–10px), so
+  perfects — and the multiplier — are attainable.
+
+Desktop is byte-identical (the height calc returns 560 for non-mobile, all CSS
+overrides are `.pt-mobile`-scoped, and the tolerance/scroll-headroom expressions
+evaluate to their original values at the desktop width/height). No regression on
+home/game/jokes/admin (prerender + hydration harness ALL PASS, both themes).
+
 ## Final QA pass + cross-page egg/eggless consistency (June 19, 2026)
 
 Ran the full content QA checklist across the nine SEO pages (build, prerender,

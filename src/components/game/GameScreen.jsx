@@ -239,6 +239,11 @@ function PattyStacker({ W = 360, H = 560 }) {
     sound.tick();
     const x = armX.current;
     const dx = x - top.x;
+    /* Perfect window scales with stage width: a flat 5px is essentially
+       unhittable on a narrow touch screen with a swinging claw, so widen it as
+       the stage narrows (desktop W=360 -> exactly 5px, unchanged). This is what
+       makes the combo multiplier actually attainable on mobile. */
+    const perfTol = STK.perfect + Math.max(0, Math.round((360 - W) / 7));
     const type = curType;
     const bonus = type === 'bun' ? 50 : 0;
     const id = idRef.current++;
@@ -266,7 +271,7 @@ function PattyStacker({ W = 360, H = 560 }) {
         return;
       }
 
-      if (Math.abs(dx) <= STK.perfect) {
+      if (Math.abs(dx) <= perfTol) {
         const ns = streak + 1;
         /* Combo multiplier: ×2 on the first perfect, +1 for each consecutive
            one, capped at ×5. A perfect is worth base × multiplier (20–50 with
@@ -334,7 +339,13 @@ function PattyStacker({ W = 360, H = 560 }) {
     });
   };
 
-  const off = Math.max(0, STK.baseB + stack.length * STK.layerH - (H - 230));
+  /* Keep `off` (the world's downward translate that scrolls the stack into view)
+     at 0 while the stack is short, so the base never gets pushed below the stage
+     on short mobile stages. headroom == H-230 on tall/desktop stages (unchanged
+     feel) but never drops below 60, so a 266px stage still shows the base + a
+     couple of layers before it starts scrolling. */
+  const headroom = Math.max(60, H - 230);
+  const off = Math.max(0, STK.baseB + stack.length * STK.layerH - headroom);
 
   const stageLabel =
     mode === 'howto' ? 'Patty Stacker — press Enter or Space to start'
@@ -491,13 +502,15 @@ function useStageWidth(mobile) {
 }
 
 /* On mobile a fixed-bottom CallBar covers the lower ~84px of the viewport, and
-   the page chrome above the stage (nav + section row + title) is ~340px. A flat
-   540px stage therefore had its base hidden behind the call bar. Size the stage
-   to the room that's actually left (viewport − chrome − call bar) so the whole
-   playfield sits clear of the bar; clamp so it never gets tiny or larger than
-   the original. The physics read H, so a shorter stage just scrolls sooner. */
+   the page chrome above the stage (nav + trimmed title row) is ~284px. Size the
+   stage to the room that's actually left (viewport − chrome − call bar) so the
+   whole playfield — including the stack's base — sits clear of the bar. The
+   subtractor (380 = ~284 chrome + ~96 call bar incl. a safe-area buffer) keeps
+   the stage above the bar; the 266 floor is the minimum that still lets the
+   world-scroll keep `off` at 0 with the base on screen (see PattyStacker). The
+   physics read H, so a shorter stage just scrolls sooner. */
 function useStageHeight(mobile) {
-  const calc = () => (mobile ? Math.max(340, Math.min(540, window.innerHeight - 424)) : 560);
+  const calc = () => (mobile ? Math.max(266, Math.min(540, window.innerHeight - 380)) : 560);
   const [h, setH] = React.useState(calc);
   React.useEffect(() => {
     const onResize = () => setH(calc());

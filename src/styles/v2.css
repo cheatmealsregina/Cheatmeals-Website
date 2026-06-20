@@ -139,6 +139,12 @@
 .stk-title__script { font-size: 0.55em; color: var(--color-text-muted); }
 .stk-sub { margin: 0; color: var(--color-text-muted); }
 
+/* Mobile: trim the chrome above the stage so the whole playfield fits above the
+   fixed-bottom CallBar (useStageHeight in GameScreen subtracts this chrome).
+   Scoped to .pt-mobile so desktop padding/gap are untouched. */
+.pt-mobile .stk-page { padding-top: var(--space-5); gap: var(--space-4); }
+.pt-mobile .stk-head { gap: var(--space-1, 4px); }
+
 .stk-col { display: grid; gap: var(--space-5); justify-items: center; }
 
 .stk-stage {
@@ -320,15 +326,23 @@
 .stk-howto .cm-aside { font-size: var(--text-xl); }
 
 /* game over */
+/* The overlay sits inside the stage (overflow:hidden). On short mobile stages
+   the card can be taller than the stage, so the overlay SCROLLS instead of
+   clipping: flex + child `margin:auto` centres the card when it fits and keeps
+   both the art and the Save/Stack-Again buttons reachable when it doesn't. */
 .stk-over {
   position: absolute;
   inset: 0;
   z-index: 7;
-  display: grid;
-  place-items: center;
+  display: flex;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--space-3);
   background: color-mix(in srgb, var(--color-bg) 70%, transparent);
 }
 .stk-overcard {
+  margin: auto;        /* centres in the flex box; allows scroll when taller */
+  flex-shrink: 0;      /* keep natural height; let the overlay scroll instead */
   width: min(86%, 300px);
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);
@@ -344,6 +358,13 @@
 /* themed celebration art on the game-over / high-score card (transparent PNG/
    WebP). Fixed box so a late-loading image never shifts the card layout. */
 .stk-overcard__art { height: 132px; width: auto; max-width: 88%; object-fit: contain; margin-bottom: calc(var(--space-2) * -1); }
+/* Short phones: shrink the art + tighten gaps so the (taller) high-score-entry
+   card fits within the stage without needing to scroll. Scoped to .pt-mobile so
+   a small desktop window can't trigger it. */
+@media (max-height: 700px) {
+  .pt-mobile .stk-overcard__art { height: 92px; }
+  .pt-mobile .stk-overcard { padding: var(--space-4); gap: var(--space-2); }
+}
 .stk-overcard__score { margin: 0; font-size: 56px; line-height: 1; color: var(--cm-red); }
 .stk-overcard__line { margin: 0; }
 .stk-overcard__line small { color: var(--color-text-muted); }
