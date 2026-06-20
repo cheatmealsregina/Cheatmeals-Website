@@ -1,5 +1,33 @@
 # Changelog
 
+## Fix leaderboard going stale after a score submit (June 20, 2026)
+
+The shared "TOP STACKERS" board could show the wrong (pre-submission) top-5 after
+a player saved a score — most visibly on mobile, where the new immersive mode
+remounts the game on close. Diagnosed with an adversarial multi-agent audit of the
+whole data path (frontend cache, submission, DB/RPC, immersive UX, CDN).
+
+- **Stale module cache (root cause).** `loadLeaderboard()` cached the top-5 in
+  module scope and never invalidated it after a write, so the remount triggered by
+  closing the immersive overlay re-read the *old* board and overwrote the just-saved
+  score. Added `primeLeaderboard()` / `invalidateLeaderboard()` to `src/lib/data.js`:
+  a successful submit now seeds the cache with the authoritative server top-5 (no
+  CDN lag), and `saveScore` also seeds it **optimistically and synchronously** so an
+  immediate "See the Board" tap still shows the score; a failed/empty submit drops
+  the cache so the next read refetches.
+- **See the board after immersive play.** In full-screen mode the board is hidden,
+  so the game-over card now offers a **"See the Board"** button (closes immersive →
+  shows the refreshed board), and the ✕ button's label says it returns to the
+  leaderboard.
+- **Submit hardening.** The save promise now has a mounted-guard (no setState after
+  the remount), a `.catch`, and a `.finally` that releases the submit guard. The
+  POST `/api/leaderboard` retries the post-upsert read once so it reliably returns
+  the fresh top-5 instead of `{ top5: null }`.
+
+Tie-break ordering (`score desc, created_at asc` — first to reach a score wins the
+tie) left unchanged; it's intentional and consistent across all three reads.
+Build + prerender ALL PASS.
+
 ## Immersive full-screen Patty Stacker on mobile (June 19, 2026)
 
 Replaced the address-bar-jittery resizing stage with an explicit immersive mode:

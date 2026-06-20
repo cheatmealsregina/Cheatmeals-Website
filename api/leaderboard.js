@@ -103,13 +103,17 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: 'Could not save the score' });
   }
 
-  const top = await fetch(
-    `${url}/rest/v1/leaderboard?select=initials,score&order=score.desc,created_at.asc&limit=5`,
-    { headers: auth }
-  );
-  const top5 = top.ok
-    ? (await top.json()).map((r) => ({ ini: r.initials.trim(), score: r.score }))
-    : null;
+  /* Read back the fresh top-5 to hand to the client in the same round trip. The
+     upsert already succeeded, so retry the read once on a transient failure
+     rather than returning { top5: null } and making the client refetch. */
+  let top5 = null;
+  for (let attempt = 0; attempt < 2 && top5 === null; attempt++) {
+    const top = await fetch(
+      `${url}/rest/v1/leaderboard?select=initials,score&order=score.desc,created_at.asc&limit=5`,
+      { headers: auth }
+    );
+    if (top.ok) top5 = (await top.json()).map((r) => ({ ini: r.initials.trim(), score: r.score }));
+  }
 
   return res.status(201).json({ ok: true, top5 });
 }

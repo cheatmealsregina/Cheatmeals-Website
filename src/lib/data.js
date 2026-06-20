@@ -202,6 +202,26 @@ export function loadLeaderboard() {
   }));
 }
 
+/* The leaderboard is the one read-WRITE dataset here, so unlike the menu/site
+   caches it has to be bustable. After a player submits a score we either seed the
+   cache with the authoritative top-5 the server just handed back — so a later
+   remount (e.g. closing the immersive overlay, which re-runs loadLeaderboard)
+   shows the new score immediately with no CDN lag — or, if we didn't get fresh
+   rows, drop the cache so the next read refetches instead of serving the
+   pre-submission snapshot. Without this the just-saved score appears to vanish
+   from the board on the next mount. */
+export function invalidateLeaderboard() {
+  boardCache = null;
+}
+export function primeLeaderboard(top5) {
+  if (!Array.isArray(top5) || !top5.length) return invalidateLeaderboard();
+  boardCache = Promise.resolve(
+    top5
+      .filter((e) => e && typeof e.score === 'number')
+      .map((e) => ({ ini: String(e.ini).trim(), score: e.score }))
+  );
+}
+
 /* "While you wait" jokes for the /jokes page. Page-specific on purpose:
    NOT part of loadAll()/the boot race, so it can never gate the site shell.
    Returns active jokes ({ lang, text, category }) in sort_order; the page

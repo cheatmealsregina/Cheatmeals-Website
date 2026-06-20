@@ -6,7 +6,7 @@ import { SiteFooter } from '../shared/SiteFooter.jsx';
 import { PieceSVG, ClawGlyph, SpeakerGlyph, SketchArrow } from './GamePieces.jsx';
 import { ThemeAsset } from '../shared/ThemeAsset.jsx';
 import { createGameSound } from './sound.js';
-import { loadLeaderboard } from '../../lib/data.js';
+import { loadLeaderboard, primeLeaderboard, invalidateLeaderboard } from '../../lib/data.js';
 
 const DS = window.CheatMealsDesignSystem_e4e564;
 
@@ -33,6 +33,7 @@ function stkPieceAt(i) { return i % 7 === 6 ? 'bun' : STK_SEQ[i % STK_SEQ.length
    simply keeps showing the localStorage list. */
 async function stkSubmitScore(ini, score) {
   try {
+    let top5;
     if (import.meta.env.DEV) {
       /* same upsert as prod (keep-the-best, one row per initials) via the
          submit_score RPC, so local testing matches production behaviour */
@@ -46,23 +47,32 @@ async function stkSubmitScore(ini, score) {
         .order('created_at')
         .limit(5);
       if (selErr) throw selErr;
-      return data.map((r) => ({ ini: r.initials.trim(), score: r.score }));
+      top5 = data.map((r) => ({ ini: r.initials.trim(), score: r.score }));
+    } else {
+      const r = await fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ initials: ini, score }),
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      ({ top5 } = await r.json());
     }
-    const r = await fetch('/api/leaderboard', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ initials: ini, score }),
-    });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const { top5 } = await r.json();
+    /* Refresh the module-level board cache so the next mount (closing the
+       immersive overlay remounts this component) shows the new score instead of
+       the pre-submission snapshot. If the upsert succeeded but the server didn't
+       hand back fresh rows, drop the cache so the next read refetches. */
+    if (top5 && top5.length) primeLeaderboard(top5);
+    else invalidateLeaderboard();
     return top5 || null;
   } catch (e) {
+    /* Force a fresh read next time rather than trusting a now-suspect cache. */
+    invalidateLeaderboard();
     console.warn('[leaderboard] score submit failed:', e);
     return null;
   }
 }
 
-function GameOverCard({ score, entry = false, saved = false, onAgain, onSave, initialInitials = '' }) {
+function GameOverCard({ score, entry = false, saved = false, onAgain, onSave, onSeeBoard, immersive = false, initialInitials = '' }) {
   const { Button } = DS;
   const [ini, setIni] = React.useState(initialInitials);
   const line =
@@ -108,7 +118,12 @@ function GameOverCard({ score, entry = false, saved = false, onAgain, onSave, in
             {saved ? <span className="cm-label" style={{ color: 'var(--color-tag-text)' }}>On the board</span> : null}
             <div className="stk-overcard__btns">
               <Button variant="primary" onClick={onAgain}>Stack Again</Button>
-              <Button variant="secondary" href="/#menu">See the Menu</Button>
+              {/* In full-screen play the board is hidden; give a clear way back to
+                  it (closing immersive remounts with the refreshed top-5). On the
+                  normal page the board's already on screen, so point at the menu. */}
+              {immersive && onSeeBoard
+                ? <Button variant="secondary" onClick={onSeeBoard}>See the Board</Button>
+                : <Button variant="secondary" href="/#menu">See the Menu</Button>}
             </div>
           </React.Fragment>
         )}
@@ -141,7 +156,7 @@ function StackerBoard({ board }) {
   );
 }
 
-function PattyStacker({ W = 360, H = 560, immersive = false, onStart }) {
+function PattyStacker({ W = 360, H = 560, immersive = false, onStart, onExit }) {
   const { Icon, Pennant } = DS;
   const [mode, setMode] = React.useState(() => {
     try { return localStorage.getItem('cm-stacker-howto') ? 'idle' : 'howto'; } catch (e) { return 'howto'; }
@@ -167,9 +182,12 @@ function PattyStacker({ W = 360, H = 560, immersive = false, onStart }) {
   const idRef = React.useRef(1);
   const droppingRef = React.useRef(false);
   const savingRef = React.useRef(false);
+  /* closeImmersive remounts this component (key={gameKey}); guard async setState
+     so an in-flight score submit that resolves after unmount is a no-op. */
+  const aliveRef = React.useRef(true);
   const timers = React.useRef([]);
   const later = (fn, ms) => { timers.current.push(setTimeout(fn, ms)); };
-  React.useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  React.useEffect(() => () => { aliveRef.current = false; timers.current.forEach(clearTimeout); }, []);
 
   const sound = React.useMemo(() => createGameSound(), []);
   React.useEffect(() => { sound.setMuted(muted); }, [muted, sound]);
@@ -332,12 +350,19 @@ function PattyStacker({ W = 360, H = 560, immersive = false, onStart }) {
       .slice(0, 5);
     setBoard(next);
     stkSaveBoard(next);
+    /* Seed the shared-board cache optimistically so an immediate remount (tapping
+       "See the Board" before the network answers) still shows the new score; the
+       authoritative server top-5 overwrites it below when it arrives. */
+    primeLeaderboard(next);
     setSaved(true);
     setMode('over');
-    /* shared leaderboard — refresh the displayed top-5 when it answers */
-    stkSubmitScore(initials, score).then((top5) => {
-      if (top5 && top5.length) setBoard(top5);
-    });
+    /* shared leaderboard — refresh the displayed top-5 when it answers (only if
+       still mounted), and always release the submit guard so a later save in the
+       same session isn't blocked. */
+    stkSubmitScore(initials, score)
+      .then((top5) => { if (aliveRef.current && top5 && top5.length) setBoard(top5); })
+      .catch((e) => { console.warn('[leaderboard] board refresh failed:', e); })
+      .finally(() => { savingRef.current = false; });
   };
 
   /* Keep `off` (the world's downward translate that scrolls the stack into view)
@@ -480,7 +505,7 @@ function PattyStacker({ W = 360, H = 560, immersive = false, onStart }) {
           </div>
         ) : null}
         {mode === 'entry' ? <GameOverCard score={score} entry onSave={saveScore} /> : null}
-        {mode === 'over' ? <GameOverCard score={score} saved={saved} onAgain={start} /> : null}
+        {mode === 'over' ? <GameOverCard score={score} saved={saved} onAgain={start} immersive={immersive} onSeeBoard={onExit} /> : null}
       </div>
       {!immersive && <StackerBoard board={board} />}
     </div>
@@ -574,7 +599,7 @@ export function GameScreen({ mobile }) {
       {!immersive ? <Nav mobile={mobile} active="" /> : null}
       <main className={'stk-page' + (immersive ? ' stk-page--immersive' : '')} id="game">
         {immersive ? (
-          <button type="button" className="stk-close" aria-label="Close full-screen game" onClick={closeImmersive}>
+          <button type="button" className="stk-close" aria-label="Close full-screen game and see the leaderboard" onClick={closeImmersive}>
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
@@ -588,7 +613,7 @@ export function GameScreen({ mobile }) {
             <p className="stk-sub">Stack 'em while we smash 'em. Your order's coming.</p>
           </header>
         )}
-        <PattyStacker key={gameKey} W={W} H={H} immersive={immersive} onStart={() => { if (mobile) setImmersive(true); }} />
+        <PattyStacker key={gameKey} W={W} H={H} immersive={immersive} onStart={() => { if (mobile) setImmersive(true); }} onExit={closeImmersive} />
       </main>
       {!immersive ? <SiteFooter /> : null}
       {mobile && !immersive ? <CallBar /> : null}
